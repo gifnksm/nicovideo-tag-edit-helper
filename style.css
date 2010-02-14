@@ -1,0 +1,78 @@
+.tag_frm {
+  border: 1px solid #CCCCCC;
+  margin-top: 2px;
+  padding: 3px;
+}
+.TXT10 {
+  font-size: 10px;
+  line-height: 1.35;
+}
+.TXT12 {
+  font-size: 12px;
+  line-height: 1.375;
+}
+.__tabpanel-tab__ {
+  font-size: 12px;
+}
+.__tabpanel-tab__ a {
+  display: inline-block;
+  margin: 0 5px -2px 0;
+  padding: 3px 5px;
+  border: 2px solid #ccc;
+  background-color: #eee;
+  text-decoration: none;
+  -moz-border-radius-topleft: 5px;
+  -moz-border-radius-topright: 5px;
+  line-height: 18px;
+}
+.__tabpanel-tab__ a:hover {
+  background-color: lightyellow;
+}
+.__tabpanel-tab__ a img {
+  vertical-align: top;
+  margin-right: 3px;
+}
+.__tabpanel-tab__ a:hover img {
+  opacity: 0.8;
+}
+.__tabpanel-tab__ a.__tabpanel-selected__ {
+  border-bottom-color: white;
+  font-weight: bolder;
+  background-color: white !important;
+  color: black !important;
+}
+.__tabpanel-panel__ {
+  padding: 10px;
+  border: 2px solid #ccc;
+}
+.__tabpanel-panel__.__jp__ > div {
+  border: none !important;
+  padding: 0 !important;
+}
+.__tabpanel-panel__ > div.tag_frm {
+  border: none !important;
+}
+.__pager__ a.__page-link__ {
+  display: inline-block;
+  text-align: center;
+}
+.__pager1__ a.__page-link__ {
+  width: 1ch;
+}
+.__pager10__ a.__page-link__ {
+  width: 2ch;
+}
+.__pager100__ a.__page-link__ {
+  width: 3ch;
+}
+.__pager1000__ a.__page-link__ {
+  width: 4ch;
+}
+a.__disable-page__ {
+  color: transparent;
+}
+a.__highlight-page__ {
+  color: black;
+  font-weight: bolder;
+  text-decoration: none;
+}
