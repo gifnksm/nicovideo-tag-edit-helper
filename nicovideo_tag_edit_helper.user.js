@@ -9,19 +9,6 @@
 // @resource       style http://github.com/gifnksm/nicovideo-tag-edit-helper/raw/master/style.css
 // ==/UserScript==
 
-
-// ***ideas***
-// XUL/Migemo 対応
-// new interface
-// 詳細表示モード
-// 直感的なインターフェース
-//   現在のタグ ★タグその1× ☆タグその2× [編集完了]
-//   □海外タグの表示
-//   追加するタグ [______] 国[jp] [追加]
-//   タグ一覧 検索：[___] □Enable Migemo □テンプレート □ニコタグ
-//
-
-
 const DEBUG = false;
 const AUTO_START = DEBUG && true;
 
