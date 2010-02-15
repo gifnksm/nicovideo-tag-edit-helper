@@ -90,6 +90,21 @@ Object.forEach = function(obj, fun) {
     if (obj.hasOwnProperty(key))
       fun(obj[key], key, obj);
 };
+Object.extend = function() {
+  var base = arguments[0];
+  Array.slice(arguments, 1).forEach(
+    function(obj) {
+      for (let key in obj) {
+        if (!obj.hasOwnProperty(key))
+          return;
+        var g = obj.__lookupGetter__(key), s = obj.__lookupSetter__(key);
+        if (g) base.__defineGetter__(key, g);
+        if (s) base.__defineSetter__(key, s);
+        if (!g && !s) base[key] = obj[key];
+      }
+    });
+  return base;
+};
 Object.memoizePrototype = function(obj, defs) {
   Object.forEach(
     defs,
@@ -192,49 +207,6 @@ const CountDown = {
   tw: function(c) { return '　還剩 ' + c + ' 秒'; },
   es: function(c) { return '　Despue\'s de ' + c + ' S'; },
   de: function(c) { return 'Sekunden nach dem ' + c; }
-};
-
-
-var Tab = function Tab() {
-  this._links = {};
-  this._elems = {};
-  this._selector = <div class={Tab.ClassNames.Tab}/>.toDOM();
-};
-Tab.ClassNames = {
-  Tab: cls('tab-tab'),
-  Selected: cls('tab-selected'),
-  Item: cls('tab-item')
-};
-Tab.ItemChangedEvent = 'GM_NicovideoTagEditHelper_ItemChanged';
-Tab.prototype = {
-  _currentItem: null,
-  get currentItem() { return this._currentItem; },
-  _selector: null,
-  get selector() { return this._selector; },
-  _links: null,
-  _elems: null,
-  add: function(name, elem, title) {
-    elem.classList.add(Tab.ClassNames.Item);
-    this._elems[name] = elem;
-    var self = this;
-    this._links[name] = HTMLUtil.commandLink(title, function() self.show(name));
-    this.selector.appendChild(this._links[name]);
-  },
-  show: function(name) {
-    if (!(name in this._links) || this._currentItem == name)
-      return;
-    this._currentItem = name;
-
-    let (c = Tab.ClassNames)
-      Object.forEach(this._links,
-                     function(l, n) { setClass(l, c.Selected, n === name); });
-    Object.forEach(this._elems,
-                   function(e, n) { e.style.display = n === name ? '' : 'none'; });
-
-    var ev = document.createEvent('Event');
-    ev.initEvent(Tab.ItemChangedEvent, true, false);
-    this.selector.dispatchEvent(ev);
-  }
 };
 
 
@@ -365,57 +337,249 @@ Object.memoizePrototype(
     }
 });
 
+// var Tab = function Tab() {
+//   this._links = {};
+//   this._elems = {};
+//   this._selector = <div class={Tab.ClassNames.Tab}/>.toDOM();
+// };
+// Tab.ClassNames = {
+//   Tab: cls('tab-tab'),
+//   Selected: cls('tab-selected'),
+//   Item: cls('tab-item')
+// };
+// Tab.SelectedChangedEvent = 'GM_NicovideoTagEditHelper_SelectedChanged';
+// Tab.prototype = {
+//   _currentItem: null,
+//   get currentItem() { return this._currentItem; },
+//   _selector: null,
+//   get selector() { return this._selector; },
+//   _links: null,
+//   _elems: null,
+//   add: function(name, elem, title) {
+//     elem.classList.add(Tab.ClassNames.Item);
+//     this._elems[name] = elem;
+//     var self = this;
+//     this._links[name] = HTMLUtil.commandLink(title, function() self.show(name));
+//     this.selector.appendChild(this._links[name]);
+//   },
+//   show: function(name) {
+//     if (!(name in this._links) || this._currentItem == name)
+//       return;
+//     this._currentItem = name;
 
-var DomainTab = function(domain) {
-  this.element = <div class={cls(domain)}></div>.toDOM();
-  this.domain = domain;
-  this._url = DomainHosts[domain] + 'tag_edit/' + VideoID;
+//     let (c = Tab.ClassNames)
+//       Object.forEach(this._links,
+//                      function(l, n) { setClass(l, c.Selected, n === name); });
+//     Object.forEach(this._elems,
+//                    function(e, n) { e.style.display = n === name ? '' : 'none'; });
+
+//     var ev = document.createEvent('Event');
+//     ev.initEvent(Tab.SelectedChangedEvent, true, false);
+//     this.selector.dispatchEvent(ev);
+//   }
+// };
+
+
+// var DomainTab = function(domain) {
+//   this.element = <div class={cls(domain)}></div>.toDOM();
+//   this.domain = domain;
+//   this._url = DomainHosts[domain] + 'tag_edit/' + VideoID;
+// };
+// DomainTab.prototype = {
+//   domain: null,
+//   _url: null,
+//   _loaded: false,
+//   clearCache: function() { this._loaded = false; },
+//   show: function() {
+//     if (!this._loaded)
+//       this.reload('');
+//   },
+//   reload: function(data)  {
+//     let e = this.element;
+//     e.innerHTML = '<img src="img/watch/tool_loading.gif" alt="処理中">';
+
+//     GM_xmlhttpRequest(
+//       {method: 'POST',
+//        url: this._url,
+//        headers: {
+//          'X-Requested-With': 'XMLHttpRequest',
+//          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+//        data: data,
+//        onload: function(response) { e.innerHTML = response.responseText; }
+//       });
+
+//     this._loaded = true;
+//   }
+// };
+
+// var CustomTab = function() {
+//   this.element = <div class={cls('custom-form')}/>.toDOM();
+//   var comment = <div>まだできてないよ．</div>;
+
+//   var pager = new Pager([ i for (i in range(0, 300)) ]);
+//   var field = <div/>.toDOM();
+
+//   pager.element.addEventListener(
+//     Pager.PageChangedEvent,
+//     function() {
+//       field.textContent = pager.currentPage + '::' + pager.currentItems;
+//     },
+//     false);
+
+//   this.element.appendChild([comment, pager.element, field].joinDOM());
+// };
+
+
+var Tab = function() {
+  this._items = {};
+  this._selector = <div class={Tab.ClassNames.Tab}/>.toDOM();
 };
-DomainTab.prototype = {
-  domain: null,
-  _url: null,
+Tab.ClassNames = {
+  Tab: cls('tab-tab')
+};
+Tab.SelectedChangedEvent = 'GM_NicovideoTagEditHelper_SelectedChanged';
+Tab.prototype = {
+  _currentItem: null,
+  get currentItem() { return this._currentItem; },
+  _selector: null,
+  get selector() { return this._selector; },
+  _items: null,
+  add: function(name, item) {
+    this._items[name] = item;
+    item.container = this;
+    this.selector.appendChild(item.label);
+  },
+  get: function(name) { return this._items[name] || null; },
+  getName: function(item) {
+    for (let key in this._items) {
+      if (this._items.hasOwnProperty(key) && this._items[key] === item)
+        return key;
+    }
+    return null;
+  },
+  remove: function(name) {
+    if (!(name in this._items))
+      return null;
+
+    let item = this._items[name];
+    item.container = null;
+    delete this._items[name];
+    this.selector.removeChild(item.label);
+    return item;
+  },
+  show: function(name) {
+    if (name instanceof TabItem)
+      name = this.getName(name);
+    if (!(name in this._items) || this._currentItem == name)
+      return;
+    this._currentItem = name;
+
+    Object.forEach(this._items,
+                   function(e, n) {
+                     if (n === name)
+                       e.show();
+                     else
+                       e.hide();
+                   });
+
+    var ev = document.createEvent('Event');
+    ev.initEvent(Tab.SelectedChangedEvent, true, false);
+    this.selector.dispatchEvent(ev);
+  }
+};
+var TabItem = function() {
+};
+TabItem.ClassNames = {
+  Element: cls('tab-item'),
+  Selected: cls('tab-selected')
+};
+TabItem.prototype = {
+  container: null,
+  init: function(label, element) {
+    var self = this;
+    this._label = HTMLUtil.commandLink(
+      label,
+      function() {
+        if (self.container) self.container.show(self);
+      });
+    this._element = element;
+    element.classList.add(TabItem.ClassNames.Element);
+  },
+  _label: null,
+  get label() { return this._label; },
+  _element: null,
+  get element() { return this._element; },
   _loaded: false,
   clearCache: function() { this._loaded = false; },
   show: function() {
-    if (!this._loaded)
-      this.reload('');
+    if (!this._loaded) {
+      this._createContent();
+      this._loaded = true;
+    }
+    this._label.classList.add(TabItem.ClassNames.Selected);
+    this.element.style.display = '';
   },
-  reload: function(data)  {
-    let e = this.element;
-    e.innerHTML = '<img src="img/watch/tool_loading.gif" alt="処理中">';
-
-    GM_xmlhttpRequest(
-      {method: 'POST',
-       url: this._url,
-       headers: {
-         'X-Requested-With': 'XMLHttpRequest',
-         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
-       data: data,
-       onload: function(response) { e.innerHTML = response.responseText; }
-      });
-
-    this._loaded = true;
+  hide: function() {
+    this._label.classList.remove(TabItem.ClassNames.Selected);
+    this.element.style.display = 'none';
   }
 };
-
-
-var CustomTab = function() {
-  this.element = <div class={cls('custom-form')}/>.toDOM();
-  var comment = <div>まだできてないよ．</div>;
-
-  var pager = new Pager([ i for (i in range(0, 300)) ]);
-  var field = <div/>.toDOM();
-
-  pager.element.addEventListener(
-    Pager.PageChangedEvent,
-    function() {
-      field.textContent = pager.currentPage + '::' + pager.currentItems;
-    },
-    false);
-
-  this.element.appendChild([comment, pager.element, field].joinDOM());
+var DomainTab = function(domain) {
+  this.init(
+      <>
+        <img src={'http://tw.nicovideo.jp/img/images/ww_'+domain+'.gif'} alt=''/>
+        {DomainLabels[domain]}
+      </>,
+      <div class={cls(domain)}></div>.toDOM());
+  this.domain = domain;
+  this._url = DomainHosts[domain] + 'tag_edit/' + VideoID;
 };
+DomainTab.prototype = Object.extend(
+  new TabItem(),
+  {
+    domain: null,
+    _url: null,
+    _createContent: function() { this.reload(''); },
+    reload: function(data)  {
+      let e = this.element;
+      e.innerHTML = '<img src="img/watch/tool_loading.gif" alt="処理中">';
 
+      GM_xmlhttpRequest(
+        {method: 'POST',
+         url: this._url,
+         headers: {
+           'X-Requested-With': 'XMLHttpRequest',
+           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+         data: data,
+         onload: function(response) { e.innerHTML = response.responseText; }
+        });
+
+      this._loaded = true;
+    }
+  });
+var CustomTab = function() {
+  this.init('カスタム', <div class={cls('custom-form')}/>.toDOM());
+};
+CustomTab.prototype = Object.extend(
+  new TabItem(),
+  {
+    _createContent: function() {
+      var comment = <div>まだできてないよ．</div>;
+
+      var pager = new Pager([ i for (i in range(0, 300)) ]);
+      var field = <div/>.toDOM();
+
+      pager.element.addEventListener(
+        Pager.PageChangedEvent,
+        function() {
+          field.textContent = pager.currentPage + '::' + pager.currentItems;
+        },
+        false);
+
+      this.element.appendChild([comment, pager.element, field].joinDOM());
+    }
+  }
+);
 
 var Application = {
   editForm: null,
@@ -431,26 +595,21 @@ var Application = {
     this.tab = new Tab();
     this.domainTabs = {};
     for each (let [, d] in Iterator(DomainNames)) {
-      this.domainTabs[d] = new DomainTab(d);
-      this.tab.add(
-        d, this.domainTabs[d].element,
-        <>
-          <img src={'http://tw.nicovideo.jp/img/images/ww_'+d+'.gif'} alt=''/>
-          {DomainLabels[d]}
-        </>
-      );
+      let item = new DomainTab(d);
+      this.domainTabs[d] = item;
+      this.tab.add(d, item);
     }
 
     this.customTab = new CustomTab();
-    this.tab.add('custom', this.customTab.element, 'カスタム');
+    this.tab.add('custom', this.customTab);
 
-    var tab = this.tab, dItems = this.domainTabs;
+    var tab = this.tab, dTabs = this.domainTabs;
     tab.selector.addEventListener(
-      Tab.ItemChangedEvent,
+      Tab.SelectedChangedEvent,
       function() {
         GM_setValue('selectedCustomTab', tab.currentItem === 'custom');
-        if (tab.currentItem in dItems)
-          dItems[tab.currentItem].show();
+        if (tab.currentItem in dTabs)
+          dTabs[tab.currentItem].show();
       },
       false);
 
