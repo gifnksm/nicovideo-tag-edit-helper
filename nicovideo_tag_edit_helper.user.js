@@ -15,9 +15,9 @@ const AUTO_START = DEBUG && true;
 
 // console.log のエラーを抑制する
 const console =
-  DEBUG && window.console !== undefined
-  ? window.console
-  : {_noSuchMethod__: function() {} };
+  DEBUG && unsafeWindow.console !== undefined
+  ? unsafeWindow.console
+  : {__noSuchMethod__: function() {} };
 
 
 
