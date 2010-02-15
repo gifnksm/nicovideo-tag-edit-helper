@@ -22,6 +22,7 @@ const console =
 
 
 // prototype拡張
+Array.prototype.include = function(x) this.indexOf(x) != -1;
 // DOM要素を結合する。引数はScalaのmkString風
 Array.prototype.joinDOM = function() {
   var [sep, head, tail] = [null, null, null],
@@ -366,6 +367,8 @@ Tab.prototype = {
     return null;
   },
   remove: function(name) {
+    if (name instanceof TabItem)
+      name = this.getName(name);
     if (!(name in this._items))
       return null;
 
@@ -492,32 +495,27 @@ CustomTab.prototype = Object.extend(
 var Application = {
   editForm: null,
   tab: null,
-  domainTabs: null,
-  customTab: null,
   get currentDomainTab() {
-    if (this.tab.currentItem in this.domainTabs)
+    if (DomainNames.include(this.tab.currentItem))
       return this.domainTabs[this.tab.currentItem];
     return null;
   },
   _initItem: function() {
     this.tab = new Tab();
-    this.domainTabs = {};
     for each (let [, d] in Iterator(DomainNames)) {
-      let item = new DomainTab(d);
-      this.domainTabs[d] = item;
-      this.tab.add(d, item);
+      this.tab.add(d, new DomainTab(d));
     }
 
-    this.customTab = new CustomTab();
-    this.tab.add('custom', this.customTab);
+    this.tab.add('custom', new CustomTab());
 
-    var tab = this.tab, dTabs = this.domainTabs;
+    var tab = this.tab;
     tab.selector.addEventListener(
       Tab.SelectedChangedEvent,
       function() {
         GM_setValue('selectedCustomTab', tab.currentItem === 'custom');
-        if (tab.currentItem in dTabs)
-          dTabs[tab.currentItem].show();
+        var t = tab.currentDomainTab;
+        if (t !== null)
+          t.show();
       },
       false);
 
@@ -538,8 +536,8 @@ var Application = {
 
     this.editForm.appendChild(
       [this.tab.selector,
-       DomainNames.map(function(d) this.domainTabs[d].element, this),
-       this.customTab.element
+       DomainNames.map(function(d) this.tab.get(d).element, this),
+       this.tab.get('custom').element
       ].joinDOM());
   }
 };
@@ -587,7 +585,7 @@ unsafeWindow.refreshTagEdit = function(form, loadingContainer) {
         clearInterval(refresh_timer);
         setTimeout(function() {
                      for each (let [, d] in Iterator(DomainNames))
-                       Application.domainTabs[d].clearCache();
+                       Application.tab.get(d).clearCache();
                      tab.reload(param);
                    }, 10);
       }
