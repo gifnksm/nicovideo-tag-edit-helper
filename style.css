@@ -11,10 +11,10 @@
   font-size: 12px;
   line-height: 1.375;
 }
-.__tabpanel-tab__ {
+.__tab-tab__ {
   font-size: 12px;
 }
-.__tabpanel-tab__ a {
+.__tab-tab__ a {
   display: inline-block;
   margin: 0 5px -2px 0;
   padding: 3px 5px;
@@ -25,31 +25,31 @@
   -moz-border-radius-topright: 5px;
   line-height: 18px;
 }
-.__tabpanel-tab__ a:hover {
+.__tab-tab__ a:hover {
   background-color: lightyellow;
 }
-.__tabpanel-tab__ a img {
+.__tab-tab__ a img {
   vertical-align: top;
   margin-right: 3px;
 }
-.__tabpanel-tab__ a:hover img {
+.__tab-tab__ a:hover img {
   opacity: 0.8;
 }
-.__tabpanel-tab__ a.__tabpanel-selected__ {
+.__tab-tab__ a.__tab-selected__ {
   border-bottom-color: white;
   font-weight: bolder;
   background-color: white !important;
   color: black !important;
 }
-.__tabpanel-panel__ {
+.__tab-item__ {
   padding: 10px;
   border: 2px solid #ccc;
 }
-.__tabpanel-panel__.__jp__ > div {
+.__tab-item__.__jp__ > div {
   border: none !important;
   padding: 0 !important;
 }
-.__tabpanel-panel__ > div.tag_frm {
+.__tab-item__ > div.tag_frm {
   border: none !important;
 }
 .__pager__ a.__page-link__ {

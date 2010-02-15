@@ -195,44 +195,44 @@ const CountDown = {
 };
 
 
-var TabPanel = function TabPanel(panels) {
+var Tab = function Tab() {
   this._links = {};
   this._elems = {};
-  this._selector = <div class={TabPanel.ClassNames.Tab}/>.toDOM();
+  this._selector = <div class={Tab.ClassNames.Tab}/>.toDOM();
 };
-TabPanel.ClassNames = {
-  Tab: cls('tabpanel-tab'),
-  Selected: cls('tabpanel-selected'),
-  Panel: cls('tabpanel-panel')
+Tab.ClassNames = {
+  Tab: cls('tab-tab'),
+  Selected: cls('tab-selected'),
+  Item: cls('tab-item')
 };
-TabPanel.PanelChangedEvent = 'GM_NicovideoTagEditHelper_PanelChanged';
-TabPanel.prototype = {
-  _currentPanel: null,
-  get currentPanel() { return this._currentPanel; },
+Tab.ItemChangedEvent = 'GM_NicovideoTagEditHelper_ItemChanged';
+Tab.prototype = {
+  _currentItem: null,
+  get currentItem() { return this._currentItem; },
   _selector: null,
   get selector() { return this._selector; },
   _links: null,
   _elems: null,
   add: function(name, elem, title) {
-    elem.classList.add(TabPanel.ClassNames.Panel);
+    elem.classList.add(Tab.ClassNames.Item);
     this._elems[name] = elem;
     var self = this;
     this._links[name] = HTMLUtil.commandLink(title, function() self.show(name));
     this.selector.appendChild(this._links[name]);
   },
   show: function(name) {
-    if (!(name in this._links) || this._currentPanel == name)
+    if (!(name in this._links) || this._currentItem == name)
       return;
-    this._currentPanel = name;
+    this._currentItem = name;
 
-    let (c = TabPanel.ClassNames)
+    let (c = Tab.ClassNames)
       Object.forEach(this._links,
                      function(l, n) { setClass(l, c.Selected, n === name); });
     Object.forEach(this._elems,
                    function(e, n) { e.style.display = n === name ? '' : 'none'; });
 
     var ev = document.createEvent('Event');
-    ev.initEvent(TabPanel.PanelChangedEvent, true, false);
+    ev.initEvent(Tab.ItemChangedEvent, true, false);
     this.selector.dispatchEvent(ev);
   }
 };
@@ -366,12 +366,12 @@ Object.memoizePrototype(
 });
 
 
-var DomainPanel = function(domain) {
+var DomainTab = function(domain) {
   this.element = <div class={cls(domain)}></div>.toDOM();
   this.domain = domain;
   this._url = DomainHosts[domain] + 'tag_edit/' + VideoID;
 };
-DomainPanel.prototype = {
+DomainTab.prototype = {
   domain: null,
   _url: null,
   _loaded: false,
@@ -399,7 +399,7 @@ DomainPanel.prototype = {
 };
 
 
-var CustomPanel = function() {
+var CustomTab = function() {
   this.element = <div class={cls('custom-form')}/>.toDOM();
   var comment = <div>まだできてないよ．</div>;
 
@@ -419,21 +419,21 @@ var CustomPanel = function() {
 
 var Application = {
   editForm: null,
-  panel: null,
-  domainPanels: null,
-  customPanel: null,
-  get currentDomainPanel() {
-    if (this.panel.currentPanel in this.domainPanels)
-      return this.domainPanels[this.panel.currentPanel];
+  tab: null,
+  domainTabs: null,
+  customTab: null,
+  get currentDomainTab() {
+    if (this.tab.currentItem in this.domainTabs)
+      return this.domainTabs[this.tab.currentItem];
     return null;
   },
-  _initPanel: function() {
-    this.panel = new TabPanel();
-    this.domainPanels = {};
+  _initItem: function() {
+    this.tab = new Tab();
+    this.domainTabs = {};
     for each (let [, d] in Iterator(DomainNames)) {
-      this.domainPanels[d] = new DomainPanel(d);
-      this.panel.add(
-        d, this.domainPanels[d].element,
+      this.domainTabs[d] = new DomainTab(d);
+      this.tab.add(
+        d, this.domainTabs[d].element,
         <>
           <img src={'http://tw.nicovideo.jp/img/images/ww_'+d+'.gif'} alt=''/>
           {DomainLabels[d]}
@@ -441,21 +441,21 @@ var Application = {
       );
     }
 
-    this.customPanel = new CustomPanel();
-    this.panel.add('custom', this.customPanel.element, 'カスタム');
+    this.customTab = new CustomTab();
+    this.tab.add('custom', this.customTab.element, 'カスタム');
 
-    var panel = this.panel, dPanels = this.domainPanels;
-    panel.selector.addEventListener(
-      TabPanel.PanelChangedEvent,
+    var tab = this.tab, dItems = this.domainTabs;
+    tab.selector.addEventListener(
+      Tab.ItemChangedEvent,
       function() {
-        GM_setValue('selectedCustomPanel', panel.currentPanel === 'custom');
-        if (panel.currentPanel in dPanels)
-          dPanels[panel.currentPanel].show();
+        GM_setValue('selectedCustomTab', tab.currentItem === 'custom');
+        if (tab.currentItem in dItems)
+          dItems[tab.currentItem].show();
       },
       false);
 
-    if (GM_getValue('selectedCustomPanel', false)) panel.show('custom');
-    else panel.show(SelectedDomain);
+    if (GM_getValue('selectedCustomTab', false)) tab.show('custom');
+    else tab.show(SelectedDomain);
   },
   init: function() {
     this.editForm = document.getElementById('tag_edit_form');
@@ -467,12 +467,12 @@ var Application = {
       v.style.display = 'none';
     };
 
-    this._initPanel();
+    this._initItem();
 
     this.editForm.appendChild(
-      [this.panel.selector,
-       DomainNames.map(function(d) this.domainPanels[d].element, this),
-       this.customPanel.element
+      [this.tab.selector,
+       DomainNames.map(function(d) this.domainTabs[d].element, this),
+       this.customTab.element
       ].joinDOM());
   }
 };
@@ -482,12 +482,12 @@ unsafeWindow.startTagEdit = function(url) {
   setTimeout(function() { Application.init(); });
 };
 unsafeWindow.refreshTagEdit = function(form, loadingContainer) {
-  var panel = Application.currentDomainPanel;
-  var domain = Application.panel.currentPanel;
-  if (panel === null)
+  var tab = Application.currentDomainTab;
+  var domain = Application.tab.currentItem;
+  if (tab === null)
     return false;
 
-  loadingContainer = panel.element.querySelector('#' + loadingContainer);
+  loadingContainer = tab.element.querySelector('#' + loadingContainer);
   var loadingText = '';
   var cmd = form.querySelector('input[type="hidden"][name="cmd"]');
   if (cmd) {
@@ -520,8 +520,8 @@ unsafeWindow.refreshTagEdit = function(form, loadingContainer) {
         clearInterval(refresh_timer);
         setTimeout(function() {
                      for each (let [, d] in Iterator(DomainNames))
-                       Application.domainPanels[d].clearCache();
-                     panel.reload(param);
+                       Application.domainTabs[d].clearCache();
+                     tab.reload(param);
                    }, 10);
       }
     }, 300);
