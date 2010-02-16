@@ -211,7 +211,7 @@ const CountDownMessage = {
 };
 
 var CountDownTimer = function(limit, tick) {
-  if (tick === undefined || tick === 0) {
+  if (tick === undefined || tick === 0 || tick >= limit) {
     this.start = this._startTimeout;
     this.stop = this._stopTimeout;
   } else {
@@ -520,6 +520,10 @@ var DomainTab = function(domain) {
   this._url = DomainHosts[domain] + 'tag_edit/' + VideoID;
 };
 DomainTab.LoadDelay = 3000;
+DomainTab.HTMLs = {
+  Loading: '<img src="img/watch/tool_loading.gif" alt="処理中">',
+  Error: '<p style="color: #cc0000; padding: 4px;">通信エラー</p>'
+};
 DomainTab.prototype = Object.extend(
   new TabItem(),
   {
@@ -530,33 +534,47 @@ DomainTab.prototype = Object.extend(
       if (data === undefined) data = '';
       if (delay === undefined) delay = 0;
       var e = this.element;
-      e.innerHTML = '<img src="img/watch/tool_loading.gif" alt="処理中">';
+      e.innerHTML = DomainTab.HTMLs.Loading;
       this.state = TabItem.State.Waiting;
 
-      setTimeout(
-        function(self) {
+      var self = this;
+      var timer = <span></span>.toDOM();
+      this.label.appendChild(timer);
+      let (cd = new CountDownTimer(delay, 300)) {
+        cd.ontick = function(d) {
+          if (d > 0) timer.textContent = ' (' + Math.ceil(d/1000) + ')';
+        };
+        cd.ontick(delay);
+        cd.ontimeout = function() {
+          self.label.removeChild(timer);
           self.state = TabItem.State.Loading;
-          GM_xmlhttpRequest(
-            {method: 'POST',
-             url: self._url
-             ,
-             headers: {
-               'X-Requested-With': 'XMLHttpRequest',
-               'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
-             data: data,
-             onload: function(response) {
-               e.innerHTML = response.responseText;
-               if (self.parse())
-                 self.state = TabItem.State.Loaded;
-               else
-                 self.state = TabItem.State.Error;
-             },
-             onerror: function(response) {
-               self.state = TabItem.State.Error;
-               e.innerHTML = '<p style="color: #cc0000; padding: 4px;">通信エラー</p>';
-             }
-            });
-        }, delay, this);
+          self._startLoading(data);
+        };
+        cd.start();
+      };
+    },
+    _startLoading: function(data) {
+      var self = this;
+      GM_xmlhttpRequest({
+        method: 'POST',
+        url: self._url,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        },
+        data: data,
+        onload: function(response) {
+          self.element.innerHTML = response.responseText;
+          if (self.parse())
+            self.state = TabItem.State.Loaded;
+          else
+            self.state = TabItem.State.Error;
+        },
+        onerror: function(response) {
+          self.state = TabItem.State.Error;
+          self.element.innerHTML = DomainTab.HTMLs.Error;
+        }
+      });
     },
     parse: function() {
       // 子要素が唯一でP要素なら読み込みエラー (混雑中)
