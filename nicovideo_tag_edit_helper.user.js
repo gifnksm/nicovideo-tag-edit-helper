@@ -548,7 +548,7 @@ DomainTab.prototype = Object.extend(
     tags: null,
     _url: null,
     _createContent: function() { this.reload(''); },
-    reload: function(data, delay)  {
+    reload: function(data, delay, callback)  {
       if (data === undefined) data = '';
       if (delay === undefined) delay = 0;
 
@@ -568,12 +568,12 @@ DomainTab.prototype = Object.extend(
         cd.ontimeout = function() {
           self.label.removeChild(timer);
           self.state = TabItem.State.Loading;
-          self._startLoading(data);
+          self._startLoading(data, callback);
         };
         cd.start();
       };
     },
-    _startLoading: function(data) {
+    _startLoading: function(data, callback) {
       var self = this;
       GM_xmlhttpRequest({
         method: 'POST',
@@ -585,14 +585,19 @@ DomainTab.prototype = Object.extend(
         data: data,
         onload: function(response) {
           self.element.innerHTML = response.responseText;
-          if (self.parse())
+          var success = self.parse();
+          if (success)
             self.state = TabItem.State.Loaded;
           else
             self.state = TabItem.State.Error;
+          if (typeof callback === 'function')
+            callback(success);
         },
         onerror: function(response) {
           self.state = TabItem.State.Error;
           self.element.innerHTML = DomainTab.HTMLs.Error;
+          if (typeof callback === 'function')
+            callback(false);
         }
       });
     },
