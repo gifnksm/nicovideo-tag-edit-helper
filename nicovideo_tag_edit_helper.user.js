@@ -203,7 +203,7 @@ const TagEditLoadingStatus = {
     'lock': 'Gesperrt innen'
   }
 };
-const CountDown = {
+const CountDownMessage = {
   jp: function(c) { return '　あと ' + c + ' 秒'; },
   tw: function(c) { return '　還剩 ' + c + ' 秒'; },
   es: function(c) { return '　Despue\'s de ' + c + ' S'; },
@@ -647,7 +647,7 @@ unsafeWindow.refreshTagEdit = function(form, loadingContainer) {
       var d = next - t();
       if(d > 0) {
         loadingContainer.innerHTML = loadingText +
-          CountDown[domain](Math.ceil(d / 0x3e8));
+          CountDownMessage[domain](Math.ceil(d / 0x3e8));
       } else {
         clearInterval(refresh_timer);
         setTimeout(function() {
