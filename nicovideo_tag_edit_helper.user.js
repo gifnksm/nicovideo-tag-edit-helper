@@ -450,7 +450,8 @@ TabItem.ClassNames = {
   Loaded: cls('tab-loaded'),
   Loading: cls('tab-loading'),
   Waiting: cls('tab-waiting'),
-  Error: cls('tab-error')
+  Error: cls('tab-error'),
+  Timer: cls('tab-timer')
 };
 TabItem.State = {
   Initial: 'initial',
@@ -515,7 +516,7 @@ var DomainTab = function(domain) {
         <img src={'http://tw.nicovideo.jp/img/images/ww_'+domain+'.gif'} alt=''/>
         {DomainLabels[domain]}
       </>,
-      <div class={cls(domain)}></div>.toDOM());
+      <div class={cls(domain)}/>.toDOM());
   this.domain = domain;
   this._url = DomainHosts[domain] + 'tag_edit/' + VideoID;
 };
@@ -533,16 +534,17 @@ DomainTab.prototype = Object.extend(
     reload: function(data, delay)  {
       if (data === undefined) data = '';
       if (delay === undefined) delay = 0;
+
       var e = this.element;
       e.innerHTML = DomainTab.HTMLs.Loading;
       this.state = TabItem.State.Waiting;
 
       var self = this;
-      var timer = <span></span>.toDOM();
+      var timer = <span class={TabItem.ClassNames.Timer}/>.toDOM();
       this.label.appendChild(timer);
       let (cd = new CountDownTimer(delay, 300)) {
         cd.ontick = function(d) {
-          if (d > 0) timer.textContent = ' (' + Math.ceil(d/1000) + ')';
+          if (d > 0) timer.textContent = '['+Math.ceil(d/1000)+']';
         };
         cd.ontick(delay);
         cd.ontimeout = function() {

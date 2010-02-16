@@ -53,6 +53,9 @@
 .__tab-tab__ a.__tab-error__ {
   color: red;
 }
+.__tab-tab__ a span.__tab-timer__ {
+  font-size: 80%;
+}
 .__tab-item__ {
   padding: 10px;
   border: 2px solid #ccc;
