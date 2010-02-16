@@ -20,7 +20,7 @@
   padding: 3px 5px;
   border: 2px solid #ccc;
   background-color: #eee;
-  color: black;
+  color: deepPink;
   text-decoration: none;
   -moz-border-radius-topleft: 5px;
   -moz-border-radius-topright: 5px;
@@ -55,6 +55,7 @@
 }
 .__tab-tab__ a span.__tab-timer__ {
   font-size: 80%;
+  margin-left: 3px;
 }
 .__tab-item__ {
   padding: 10px;
