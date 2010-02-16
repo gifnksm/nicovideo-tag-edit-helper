@@ -23,6 +23,22 @@ const console =
 
 // prototype拡張
 Array.prototype.include = function(x) this.indexOf(x) != -1;
+Array.prototype.partition = function(fun, thisp) {
+  if (typeof fun != 'function')
+    throw new TypeError();
+
+  var res1 = [], res2 = [];
+  for (var i = 0, len = this.length; i < len; i++) {
+    if (i in this) {
+      if (fun.call(thisp, this[i], i, this))
+        res1.push(this[i]);
+      else
+        res2.push(this[i]);
+    }
+  }
+  return [res1, res2];
+};
+
 // DOM要素を結合する。引数はScalaのmkString風
 Array.prototype.joinDOM = function() {
   var [sep, head, tail] = [null, null, null],
@@ -529,6 +545,7 @@ DomainTab.prototype = Object.extend(
   new TabItem(),
   {
     domain: null,
+    tags: null,
     _url: null,
     _createContent: function() { this.reload(''); },
     reload: function(data, delay)  {
@@ -538,6 +555,7 @@ DomainTab.prototype = Object.extend(
       var e = this.element;
       e.innerHTML = DomainTab.HTMLs.Loading;
       this.state = TabItem.State.Waiting;
+      this.tags = null;
 
       var self = this;
       var timer = <span class={TabItem.ClassNames.Timer}/>.toDOM();
@@ -583,9 +601,30 @@ DomainTab.prototype = Object.extend(
       if (this.element.firstElementChild.nodeName == 'P'
           && this.element.childElementCount == 1)
         return false;
+      var self = this;
       var rows = this.element.querySelectorAll(
         'div > table[summary=""] > tbody > tr:nth-of-type(odd)');
-      console.log(rows);
+      this.tags = Array.map(
+        rows, function(tr) {
+          var tag = {};
+          tag.name = tr.querySelector('td:first-child').firstChild.textContent;
+          let (submit = tr.querySelectorAll('input[type="submit"]')) {
+            tag.canLock = submit.length > 1;
+            tag.canCategorize = submit.length > 2;
+          };
+          var [star, domain] = Array.prototype.partition.call(
+            tr.querySelectorAll('td:first-child > span'),
+            function(span) span.textContent === '★'
+          );
+          tag.locked = star.length > 0;
+          if (domain.length > 0) {
+            tag.domain = domain[0].textContent.replace(/\[|\]/g, '');
+          } else {
+            tag.domain = self.domain;
+          }
+          tag.category = tr.querySelector('td:first-child > strong') != null;
+          return tag;
+        });
       return true;
     }
   });
