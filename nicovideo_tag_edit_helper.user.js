@@ -9,7 +9,7 @@
 // @resource       style http://github.com/gifnksm/nicovideo-tag-edit-helper/raw/master/style.css
 // ==/UserScript==
 
-const DEBUG = false;
+const DEBUG = true;
 const AUTO_START = DEBUG && true;
 
 
@@ -641,13 +641,13 @@ unsafeWindow.refreshTagEdit = function(form, loadingContainer) {
     }).join('&');
 
   var t = function () { return (new Date()).getTime(); };
-  var next = t() + 0xbb8;
+  var next = t() + 3000;
   var refresh_timer = setInterval(
     function() {
       var d = next - t();
       if(d > 0) {
         loadingContainer.innerHTML = loadingText +
-          CountDownMessage[domain](Math.ceil(d / 0x3e8));
+          CountDownMessage[domain](Math.ceil(d / 1000));
       } else {
         clearInterval(refresh_timer);
         setTimeout(function() {
