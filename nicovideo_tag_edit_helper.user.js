@@ -9,7 +9,7 @@
 // @resource       style http://github.com/gifnksm/nicovideo-tag-edit-helper/raw/master/style.css
 // ==/UserScript==
 
-const DEBUG = true;
+const DEBUG = false;
 const AUTO_START = DEBUG && true;
 
 
