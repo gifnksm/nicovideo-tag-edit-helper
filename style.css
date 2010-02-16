@@ -20,6 +20,7 @@
   padding: 3px 5px;
   border: 2px solid #ccc;
   background-color: #eee;
+  color: black;
   text-decoration: none;
   -moz-border-radius-topleft: 5px;
   -moz-border-radius-topright: 5px;
@@ -39,7 +40,18 @@
   border-bottom-color: white;
   font-weight: bolder;
   background-color: white !important;
-  color: black !important;
+}
+.__tab-tab__ a.__tab-waiting__ {
+  color: slateblue;
+}
+.__tab-tab__ a.__tab-loading__ {
+  color: orange;
+}
+.__tab-tab__ a.__tab-loaded__ {
+  color: black;
+}
+.__tab-tab__ a.__tab-error__ {
+  color: red;
 }
 .__tab-item__ {
   padding: 10px;

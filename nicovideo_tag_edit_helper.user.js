@@ -398,11 +398,21 @@ Tab.prototype = {
     this.selector.dispatchEvent(ev);
   }
 };
-var TabItem = function() {
-};
+var TabItem = function() {};
 TabItem.ClassNames = {
   Element: cls('tab-item'),
-  Selected: cls('tab-selected')
+  Selected: cls('tab-selected'),
+  Loaded: cls('tab-loaded'),
+  Loading: cls('tab-loading'),
+  Waiting: cls('tab-waiting'),
+  Error: cls('tab-error')
+};
+TabItem.State = {
+  Initial: 'initial',
+  Waiting: 'waiting',
+  Loading: 'loading',
+  Loaded: 'loaded',
+  Error: 'error'
 };
 TabItem.prototype = {
   container: null,
@@ -420,12 +430,31 @@ TabItem.prototype = {
   get label() { return this._label; },
   _element: null,
   get element() { return this._element; },
-  _loaded: false,
-  clearCache: function() { this._loaded = false; },
+  _state: TabItem.State.Initial,
+  get state() { return this._state; },
+  set state(state) {
+    var cl = this._label.classList, c = TabItem.ClassNames, s = TabItem.State;
+    for each (let [,name] in Iterator([c.Waiting, c.Loading, c.Loaded, c.Error])) {
+      cl.remove(name);
+    }
+    switch(state) {
+    case s.Initial: break;
+    case s.Waiting: cl.add(c.Waiting); break;
+    case s.Loading: cl.add(c.Loading); break;
+    case s.Loaded:  cl.add(c.Loaded);  break;
+    case s.Error:   cl.add(c.Error);   break;
+    default: throw new Error('invalid state');
+    }
+    this._state = state;
+  },
+  get waiting() { return this.state === TabItem.State.Waiting; },
+  get loading() { return this.state === TabItem.State.Loading; },
+  get loaded() { return this.state  === TabItem.State.Loaded; },
+  get error() { return this.state   === TabItem.State.Error; },
+  clearCache: function() { this.state = TabItem.State.Initial; },
   show: function() {
-    if (!this._loaded) {
+    if (!this.loaded) {
       this._createContent();
-      this._loaded = true;
     }
     this._label.classList.add(TabItem.ClassNames.Selected);
     this.element.style.display = '';
@@ -445,27 +474,54 @@ var DomainTab = function(domain) {
   this.domain = domain;
   this._url = DomainHosts[domain] + 'tag_edit/' + VideoID;
 };
+DomainTab.LoadDelay = 3000;
 DomainTab.prototype = Object.extend(
   new TabItem(),
   {
     domain: null,
     _url: null,
     _createContent: function() { this.reload(''); },
-    reload: function(data)  {
-      let e = this.element;
+    reload: function(data, delay)  {
+      if (data === undefined) data = '';
+      if (delay === undefined) delay = 0;
+      var e = this.element;
       e.innerHTML = '<img src="img/watch/tool_loading.gif" alt="処理中">';
+      this.state = TabItem.State.Waiting;
 
-      GM_xmlhttpRequest(
-        {method: 'POST',
-         url: this._url,
-         headers: {
-           'X-Requested-With': 'XMLHttpRequest',
-           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
-         data: data,
-         onload: function(response) { e.innerHTML = response.responseText; }
-        });
-
-      this._loaded = true;
+      setTimeout(
+        function(self) {
+          self.state = TabItem.State.Loading;
+          GM_xmlhttpRequest(
+            {method: 'POST',
+             url: self._url
+             ,
+             headers: {
+               'X-Requested-With': 'XMLHttpRequest',
+               'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+             data: data,
+             onload: function(response) {
+               e.innerHTML = response.responseText;
+               if (self.parse())
+                 self.state = TabItem.State.Loaded;
+               else
+                 self.state = TabItem.State.Error;
+             },
+             onerror: function(response) {
+               self.state = TabItem.State.Error;
+               e.innerHTML = '<p style="color: #cc0000; padding: 4px;">通信エラー</p>';
+             }
+            });
+        }, delay, this);
+    },
+    parse: function() {
+      // 子要素が唯一でP要素なら読み込みエラー (混雑中)
+      if (this.element.firstElementChild.nodeName == 'P'
+          && this.element.childElementCount == 1)
+        return false;
+      var rows = this.element.querySelectorAll(
+        'div > table[summary=""] > tbody > tr:nth-of-type(odd)');
+      console.log(rows);
+      return true;
     }
   });
 var CustomTab = function() {
@@ -488,6 +544,17 @@ CustomTab.prototype = Object.extend(
         false);
 
       this.element.appendChild([comment, pager.element, field].joinDOM());
+
+      var c = this.container;
+      DomainNames.reduce(
+        function(delay, domain) {
+          var item = c.get(domain);
+          if (item.loaded)
+            return delay;
+          item.reload('', delay);
+          return delay + DomainTab.LoadDelay;
+        }, 0);
+      this.state = TabItem.State.Loaded;
     }
   }
 );
@@ -497,7 +564,7 @@ var Application = {
   tab: null,
   get currentDomainTab() {
     if (DomainNames.include(this.tab.currentItem))
-      return this.domainTabs[this.tab.currentItem];
+      return this.tab.get(this.tab.currentItem);
     return null;
   },
   _initItem: function() {
