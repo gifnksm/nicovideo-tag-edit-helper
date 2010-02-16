@@ -210,6 +210,51 @@ const CountDownMessage = {
   de: function(c) { return 'Sekunden nach dem ' + c; }
 };
 
+var CountDownTimer = function(limit, tick) {
+  if (tick === undefined || tick === 0) {
+    this.start = this._startTimeout;
+    this.stop = this._stopTimeout;
+  } else {
+    this.start = this._startInterval;
+    this.stop = this._stopInterval;
+  }
+  this._limit = limit;
+  this._tick = tick;
+};
+CountDownTimer.prototype = {
+  _timer: null,
+  _startTimeout: function() {
+    this._timer = setTimeout( function(self) { self.ontimeout(); },
+                              this._limit, this);
+  },
+  _startInterval: function() {
+    if (this._timer !== null)
+      return;
+    var now = function () { return (new Date()).getTime(); };
+    var next = now() + this._limit;
+    this._timer = setInterval(
+      function(self) {
+        var d = next - now();
+        if (d > 0) {
+          self.ontick(d);
+          return;
+        }
+        self.stop();
+        self.ontimeout();
+      }, this._tick, this);
+  },
+  start: null,
+  _stop: function(stopFun) {
+    if (this._timer === null) return;
+    stopFun(this._timer);
+    this._timer = null;
+  },
+  _stopTimeout: function() { this._stop(clearTimeout); },
+  _stopInterval: function() { this._stop(clearInterval); },
+  stop: null,
+  ontimeout: function() {},
+  ontick: function() {}
+};
 
 var Pager = function Pager(items) {
   this._element = <div class={Pager.ClassNames.Pager}/>.toDOM();
@@ -640,23 +685,18 @@ unsafeWindow.refreshTagEdit = function(form, loadingContainer) {
       return encodeURI(elem.name) + "=" + encodeURI(elem.value);
     }).join('&');
 
-  var t = function () { return (new Date()).getTime(); };
-  var next = t() + 3000;
-  var refresh_timer = setInterval(
-    function() {
-      var d = next - t();
-      if(d > 0) {
-        loadingContainer.innerHTML = loadingText +
-          CountDownMessage[domain](Math.ceil(d / 1000));
-      } else {
-        clearInterval(refresh_timer);
-        setTimeout(function() {
-                     for each (let [, d] in Iterator(DomainNames))
-                       Application.tab.get(d).clearCache();
-                     tab.reload(param);
-                   }, 10);
-      }
-    }, 300);
+  let (cd = new CountDownTimer(3000, 300)) {
+    cd.ontick = function(d) {
+      loadingContainer.innerHTML = loadingText +
+        CountDownMessage[domain](Math.ceil(d / 1000));
+    };
+    cd.ontimeout = function() {
+      for each (let [, d] in Iterator(DomainNames))
+      Application.tab.get(d).clearCache();
+      tab.reload(param);
+    };
+    cd.start();
+  };
 
   return false;
 };
