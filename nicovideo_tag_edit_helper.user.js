@@ -712,7 +712,8 @@ unsafeWindow.refreshTagEdit = function(form, loadingContainer) {
     };
     cd.ontimeout = function() {
       for each (let [, d] in Iterator(DomainNames))
-      Application.tab.get(d).clearCache();
+        Application.tab.get(d).clearCache();
+      Application.tab.get('custom').clearCache();
       tab.reload(param);
     };
     cd.start();
