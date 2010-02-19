@@ -203,12 +203,7 @@ var HTMLUtil = {
 
 const VideoID = unsafeWindow.Video.id;
 const DomainNames = ['jp', 'tw', 'es', 'de'];
-const DomainLabels = {
-  jp: '日本',
-  tw: '台灣',
-  es: 'スペイン',
-  de: 'ドイツ'
-};
+const DomainLabels = { jp: '日本', tw: '台灣', es: 'スペイン', de: 'ドイツ' };
 const DomainHosts = {
   jp: 'http://www.nicovideo.jp/',
   tw: 'http://tw.nicovideo.jp/',
