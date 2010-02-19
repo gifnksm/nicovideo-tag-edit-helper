@@ -73,6 +73,11 @@ Function.prototype.bind = function() {
   return function() self.apply(obj, args.concat(Array.slice(arguments)));
 };
 
+Function.prototype.go = function() {
+  var g = this(function(t) { try { g.send(t); } catch (e) {} });
+  g.next();
+};
+
 // XML (E4X)からDOM Nodeへの変換
 default xml namespace = "http://www.w3.org/1999/xhtml";
 (function() {
@@ -828,9 +833,10 @@ TagList.prototype = {
     this._originalTags = {};
     this.element.textContent = '';
   },
-  add: function(domain, tagData) {
-    this._originalTagData[domain] = tagData.slice();
-    var tags = this._tags[domain] = tagData.map(function(t) new Tag(t));
+  add: function(item) {
+    var domain = item.domain;
+    this._originalTagData[domain] = item.tags.slice();
+    var tags = this._tags[domain] = item.tags.map(function(t) new Tag(t));
 
     var domainElement =
       <div class={TagList.Classes.DomainList}>
@@ -880,33 +886,24 @@ CustomTab.prototype = Object.extend(
       this.element.appendChild([comment, this._tagList.element,
                                 pager.element, field].joinDOM());
 
-      var c = this.container;
-      var loadingCount = 0, requestCount = DomainNames.length;
       var self = this;
-
-      function loadedHandler(item, success) {
-        loadingCount--;
-
-        if (success)
-          self._tagList.add(item.domain, item.tags);
-        if (requestCount > 0 || loadingCount > 0)
-          return;
-
-        self.state = TabItem.State.Loaded;
-      }
-
-      DomainNames.reduce(
-        function(delay, domain) {
-          requestCount--;
-          var item = c.get(domain);
-          if (item.loaded) {
-            loadedHandler(item, true);
-            return delay;
-          }
-          loadingCount++;
-          item.reload('', delay, loadedHandler);
-          return delay + DomainTab.LoadDelay;
-        }, 0);
+      (function(resume) {
+         for each(let [, domain] in Iterator(DomainNames)) {
+           let item = self.container.get(domain);
+           if (item.loaded) {
+             self._tagList.add(item);
+             continue;
+           }
+           yield item.reload(
+             '', DomainTab.LoadDelay,
+             function(item, success) {
+               if (success)
+                 self._tagList.add(item);
+               resume();
+             });
+         }
+         self.state = TabItem.State.Loaded;
+       }).go();
     }
   }
 );
