@@ -107,6 +107,18 @@ Object.forEach = function(obj, fun) {
     if (obj.hasOwnProperty(key))
       fun(obj[key], key, obj);
 };
+Object.clone = function(obj) {
+  var clone = {};
+  for (let key in obj) {
+    if (!obj.hasOwnProperty(key))
+      continue;
+    var g = obj.__lookupGetter__(key), s = obj.__lookupSetter__(key);
+    if (g) clone.__defineGetter__(key, g);
+    if (s) clone.__defineSetter__(key, s);
+    if (!g && !s) clone[key] = obj[key];
+  }
+  return clone;
+};
 Object.extend = function() {
   var base = arguments[0];
   Array.slice(arguments, 1).forEach(
