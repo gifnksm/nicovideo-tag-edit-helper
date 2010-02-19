@@ -588,12 +588,15 @@ TabItem.prototype = {
 var DomainTab = function(domain) {
   this.init(
       <>
-        <img src={'http://tw.nicovideo.jp/img/images/ww_'+domain+'.gif'} alt=''/>
+        {DomainTab.getDomainImage(domain)}
         {DomainLabels[domain]}
       </>,
       <div class={cls(domain)}/>.toDOM());
   this.domain = domain;
   this._url = DomainHosts[domain] + 'tag_edit/' + VideoID;
+};
+DomainTab.getDomainImage = function(domain) {
+  return <img src={'http://tw.nicovideo.jp/img/images/ww_'+domain+'.gif'} alt=''/>;
 };
 DomainTab.LoadDelay = 3000;
 DomainTab.HTMLs = {
