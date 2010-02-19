@@ -832,11 +832,12 @@ TagList.prototype = {
     this._originalTagData[domain] = tagData.slice();
     var tags = this._tags[domain] = tagData.map(function(t) new Tag(t));
 
-    var domainElement = <div class={TagList.Classes.DomainList}>
-      <strong class={TagList.Classes.DomainListHeader}>
-        {DomainTab.getDomainImage(domain)}{DomainLabels[domain]}:
-      </strong>
-    </div>.toDOM();
+    var domainElement =
+      <div class={TagList.Classes.DomainList}>
+        <strong class={TagList.Classes.DomainListHeader}>
+          {DomainTab.getDomainImage(domain)}{DomainLabels[domain]}:
+        </strong>
+      </div>.toDOM();
     domainElement.appendChild(Object.toDOM(' '));
 
     domainElement.appendChild(
@@ -852,8 +853,7 @@ var CustomTab = function() {
   this._tagList = new TagList();
 };
 CustomTab.prototype = Object.extend(
-  new TabItem(),
-  {
+  new TabItem(), {
     _tagList: null,
     _createContent: function() {
       this.element.textContent = '';
