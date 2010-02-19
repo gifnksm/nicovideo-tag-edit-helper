@@ -604,6 +604,7 @@ var DomainTab = function(domain) {
         {DomainLabels[domain]}
       </>,
       <div class={cls(domain)}/>.toDOM());
+  this.element.innerHTML = DomainTab.HTMLs.Loading;
   this.domain = domain;
   this._url = DomainHosts[domain] + 'tag_edit/' + VideoID;
   this._callbacks = [];
