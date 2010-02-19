@@ -68,6 +68,73 @@
 .__tab-item__ > div.tag_frm {
   border: none !important;
 }
+.__tag-list__ {
+  font-size: 12px;
+  word-spacing: 10px;
+}
+.__tag-list__ .__tag-domain-list__ {
+  margin: 5px 0 0;
+  padding: 5px;
+  border: 1px solid silver;
+}
+.__tag-list__ .__tag-domain-list-header__ img {
+  vertical-align: top;
+  margin-right: 3px;
+}
+.__tag-list__ .__tag__.__tag-locked__ .__tag-locked-mark__ {
+  color: #f90;
+}
+.__tag-list__ .__tag__ .__tag-lock-toggle__ {
+  color: silver;
+  text-decoration: none;
+}
+.__tag-list__ .__tag__ .__tag-lock-toggle__:hover {
+  color: #eee;
+}
+.__tag-list__ .__tag__.__tag-locked__ .__tag-lock-toggle__{
+  color: #f90;
+}
+.__tag-list__ .__tag__.__tag-locked__ .__tag-lock-toggle__:hover {
+  color: #fd0;
+}
+.__tag-list__ .__tag__.__tag-category__  .__tag-categpry-mark__{
+  color: #c00;
+  font-weight: bolder;
+}
+.__tag-list__ .__tag__ .__tag-category-toggle__ {
+  color: silver;
+  text-decoration: none;
+  font-weight: bolder;
+}
+.__tag-list__ .__tag__ .__tag-category-toggle__:hover {
+  color: #eee;
+}
+.__tag-list__ .__tag__.__tag-category__ .__tag-category-toggle__ {
+  color: #c00;
+}
+.__tag-list__ .__tag__.__tag-category__ .__tag-category-toggle__:hover {
+  color: #f33;
+}
+.__tag-list__ .__tag-delete-toggle__ {
+  color: silver;
+  text-decoration: none;
+  font-weight: bolder;
+  margin-right: 2px;
+}
+.__tag-list__ .__tag-delete-toggle__:hover {
+  color: #eee;
+}
+.__tag-list__ .__tag-deleted__ > .__tag-delete-toggle__ {
+  color: red;
+}
+.__tag-list__ .__tag-deleted__ > .__tag-delete-toggle__:hover {
+  color: #faa;
+}
+.__tag-list__ .__tag-deleted__ > :not(.__tag-delete-toggle__) {
+  text-decoration: line-through;
+  color: gray !important;
+}
+
 .__pager__ a.__page-link__ {
   display: inline-block;
   text-align: center;

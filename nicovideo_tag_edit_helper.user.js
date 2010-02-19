@@ -189,6 +189,13 @@ var HTMLUtil = {
         value = !value;
         command.call(this, value, e);
       });
+  },
+  propertyToggler: function(text, obj, propName) {
+    return this.toggleLink(
+      text,
+      function(value) { obj[propName] = value; },
+      obj[propName]
+    );
   }
 };
 
@@ -675,6 +682,7 @@ DomainTab.prototype = Object.extend(
         rows, function(tr) {
           var tag = {};
           tag.name = tr.querySelector('td:first-child').firstChild.textContent;
+          tag.deleted = false;
           let (submit = tr.querySelectorAll('input[type="submit"]')) {
             tag.canLock = submit.length > 1;
             tag.canCategorize = tag.canLock
@@ -696,14 +704,161 @@ DomainTab.prototype = Object.extend(
       return true;
     }
   });
+
+var Tag = function(data) {
+  this.name = data.name;
+  this.domain = data.domain;
+  this.canLock = data.canLock;
+  this.canCategorize = data.canCategorize;
+  this._locked = data.locked;
+  this._category = data.category;
+  this._deleted = data.deleted;
+};
+Tag.Classes = {
+  Element: cls('tag'),
+  Name: cls('tag-name'),
+  Locked: cls('tag-locked'),
+  LockedMark: cls('tag-locked-mark'),
+  LockToggle: cls('tag-lock-toggle'),
+  Category: cls('tag-category'),
+  CategoryMark: cls('tag-category-mark'),
+  CategoryToggle: cls('tag-category-toggle'),
+  Deleted: cls('tag-deleted'),
+  DeleteToggle: cls('tag-delete-toggle')
+};
+Tag.prototype = {
+  _locked: null,
+  get locked() { return this._locked; },
+  set locked(value) {
+    this._locked = value;
+    this._updateClass();
+  },
+  _category: null,
+  get category() { return this._category; },
+  set category(value) {
+    this._category = value;
+    this._updateClass();
+  },
+  _deleted: null,
+  get deleted() { return this._deleted; },
+  set deleted(value) {
+    this._deleted = value;
+    this._updateClass();
+  },
+  _updateClass: function() {
+    if (this._element === null)
+      return;
+    setClass(this.element, Tag.Classes.Locked, this.locked);
+    setClass(this.element, Tag.Classes.Category, this.category);
+    setClass(this.element, Tag.Classes.Deleted, this.deleted);
+  },
+  _element: null,
+  get element() {
+    if (this._element !== null)
+      return this._element;
+
+    var e = <nobr class={Tag.Classes.Element}/>.toDOM(), children = [];
+
+    if (this.canLock || !this.locked)
+      children.push(this._deleteToggle);
+
+    children.push(this._nameElement);
+
+    if (this.canLock) {
+      children.push(this._lockToggle);
+    } else if (this.locked) {
+      children.push(this._lockedElement);
+    }
+
+    if (this.canCategorize) {
+      children.push(this._categoryToggle);
+    } else if (this.category) {
+      children.push(this._categoryElement);
+    }
+
+    e.appendChild(children.joinDOM());
+
+    this._element = e;
+    this._updateClass();
+    return e;
+  }
+};
+Object.memoizePrototype(
+  Tag.prototype, {
+    _nameElement: function() {
+      return <span class={Tag.Classes.Name}>{this.name}</span>.toDOM();
+    },
+    _lockedElement: function() {
+      return <span class={Tag.Classes.LockedMark}>★</span>.toDOM();
+    },
+    _lockToggle: function() {
+      var l = HTMLUtil.propertyToggler('★', this, 'locked');
+      l.classList.add(Tag.Classes.LockToggle);
+      return l;
+    },
+    _categoryElement: function() {
+      return <span class={Tag.Classes.CategoryMark}>カテゴリ</span>.toDOM();
+    },
+    _categoryToggle: function() {
+      var l = HTMLUtil.propertyToggler('カテゴリ', this, 'category');
+      l.classList.add(Tag.Classes.CategoryToggle);
+      return l;
+    },
+    _deleteToggle: function() {
+      var l = HTMLUtil.propertyToggler('×', this, 'deleted');
+      l.classList.add(Tag.Classes.DeleteToggle);
+      return l;
+    }
+  });
+
+var TagList = function() {
+  this._tags = {};
+  this._originalTagData = {};
+  this.element = <div class={TagList.Classes.Element}/>.toDOM();
+};
+TagList.Classes = {
+  Element: cls('tag-list'),
+  DomainList: cls('tag-domain-list'),
+  DomainListHeader: cls('tag-domain-list-header')
+};
+TagList.prototype = {
+  element: null,
+  _tags: null,
+  _originalTagData: null,
+  clear: function() {
+    this._tags = {};
+    this._originalTags = {};
+    this.element.textContent = '';
+  },
+  add: function(domain, tagData) {
+    this._originalTagData[domain] = tagData.slice();
+    var tags = this._tags[domain] = tagData.map(function(t) new Tag(t));
+
+    var domainElement = <div class={TagList.Classes.DomainList}>
+      <strong class={TagList.Classes.DomainListHeader}>
+        {DomainTab.getDomainImage(domain)}{DomainLabels[domain]}:
+      </strong>
+    </div>.toDOM();
+    domainElement.appendChild(Object.toDOM(' '));
+    var self = this;
+
+    var elems = tags.filter(function(t) t.domain === domain)
+      .map(function(t) t.element);
+    domainElement.appendChild(elems.joinDOM(' '));
+  this.element.appendChild(domainElement);
+  }
+};
 var CustomTab = function() {
   this.init('カスタム', <div class={cls('custom-form')}/>.toDOM());
+  this._tagList = new TagList();
 };
 CustomTab.prototype = Object.extend(
   new TabItem(),
   {
+    _tagList: null,
     _createContent: function() {
       this.element.textContent = '';
+      this._tagList.clear();
       this.state = TabItem.State.Loading;
 
       var comment =
@@ -723,7 +878,8 @@ CustomTab.prototype = Object.extend(
         },
         false);
 
-      this.element.appendChild([comment, pager.element, field].joinDOM());
+      this.element.appendChild([comment, this._tagList.element,
+                                pager.element, field].joinDOM());
 
       var c = this.container;
       var loadingCount = 0, requestCount = DomainNames.length;
@@ -732,6 +888,8 @@ CustomTab.prototype = Object.extend(
       function loadedHandler(item, success) {
         loadingCount--;
 
+        if (success)
+          self._tagList.add(item.domain, item.tags);
         if (requestCount > 0 || loadingCount > 0)
           return;
 
