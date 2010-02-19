@@ -66,6 +66,12 @@ Array.prototype.joinDOM = function() {
   return df;
 };
 
+Function.prototype.bind = function() {
+  var self = this,
+      obj = Array.shift(arguments),
+      args = Array.slice(arguments);
+  return function() self.apply(obj, args.concat(Array.slice(arguments)));
+};
 
 // XML (E4X)からDOM Nodeへの変換
 default xml namespace = "http://www.w3.org/1999/xhtml";
@@ -302,8 +308,7 @@ var CountDownTimer = function(limit, tick) {
 CountDownTimer.prototype = {
   _timer: null,
   _startTimeout: function() {
-    this._timer = setTimeout( function(self) { self.ontimeout(); },
-                              this._limit, this);
+    this._timer = setTimeout(this.ontimeout.bind(this), this._limit);
   },
   _startInterval: function() {
     if (this._timer !== null)
@@ -311,15 +316,15 @@ CountDownTimer.prototype = {
     var now = function () { return (new Date()).getTime(); };
     var next = now() + this._limit;
     this._timer = setInterval(
-      function(self) {
+      function() {
         var d = next - now();
         if (d > 0) {
-          self.ontick(d);
+          this.ontick(d);
           return;
         }
-        self.stop();
-        self.ontimeout();
-      }, this._tick, this);
+        this.stop();
+        this.ontimeout();
+      }.bind(this), this._tick);
   },
   start: null,
   _stop: function(stopFun) {
@@ -398,13 +403,12 @@ Pager.prototype = {
       this._pages = [
         this._items.slice(ipp*p, ipp*(p+1)) for (p in range(0, plen)) ];
 
-    var self = this;
     this._links = this._pages.map(
       function(_, p) {
-        var l = HTMLUtil.commandLink(p+1, function() self.goTo(p));
+        var l = HTMLUtil.commandLink(p+1, this.goTo.bind(this, p));
         l.classList.add(c.PageLink);
         return l;
-      });
+      }, this);
 
     this.element.appendChild(
       this._links.joinDOM([this._prevLink, ' '], ' ', [' ', this._nextLink]));
@@ -452,12 +456,10 @@ Pager.prototype = {
 Object.memoizePrototype(
   Pager.prototype, {
     _prevLink: function() {
-      var self = this;
-      return HTMLUtil.commandLink('\xab', function() self.prev());
+      return HTMLUtil.commandLink('\xab', this.prev.bind(this));
     },
     _nextLink: function() {
-      var self = this;
-      return HTMLUtil.commandLink('\xbb', function() self.next());
+      return HTMLUtil.commandLink('\xbb', this.next.bind(this));
     }
 });
 
@@ -541,12 +543,12 @@ TabItem.State = {
 TabItem.prototype = {
   container: null,
   init: function(label, element) {
-    var self = this;
     this._label = HTMLUtil.commandLink(
       label,
       function() {
-        if (self.container) self.container.show(self);
-      });
+        if (this.container) this.container.show(this);
+      }.bind(this)
+    );
     this._element = element;
     element.classList.add(TabItem.ClassNames.Element);
   },
@@ -622,7 +624,6 @@ DomainTab.prototype = Object.extend(
       this.state = TabItem.State.Waiting;
       this.tags = null;
 
-      var self = this;
       var timer = <span class={TabItem.ClassNames.Timer}/>.toDOM();
       this.label.appendChild(timer);
       let (cd = new CountDownTimer(delay, 300)) {
@@ -631,39 +632,38 @@ DomainTab.prototype = Object.extend(
         };
         cd.ontick(delay);
         cd.ontimeout = function() {
-          self.label.removeChild(timer);
-          self.state = TabItem.State.Loading;
-          self._startLoading(data, callback);
-        };
+          this.label.removeChild(timer);
+          this.state = TabItem.State.Loading;
+          this._startLoading(data, callback);
+        }.bind(this);
         cd.start();
       };
     },
     _startLoading: function(data, callback) {
-      var self = this;
       GM_xmlhttpRequest({
         method: 'POST',
-        url: self._url,
+        url: this._url,
         headers: {
           'X-Requested-With': 'XMLHttpRequest',
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
         },
         data: data,
         onload: function(response) {
-          self.element.innerHTML = response.responseText;
-          var success = self.parse();
+          this.element.innerHTML = response.responseText;
+          var success = this.parse();
           if (success)
-            self.state = TabItem.State.Loaded;
+            this.state = TabItem.State.Loaded;
           else
-            self.state = TabItem.State.Error;
+            this.state = TabItem.State.Error;
           if (typeof callback === 'function')
-            callback(self, success);
-        },
+            callback(this, success);
+        }.bind(this),
         onerror: function(response) {
-          self.state = TabItem.State.Error;
-          self.element.innerHTML = DomainTab.HTMLs.Error;
+          this.state = TabItem.State.Error;
+          this.element.innerHTML = DomainTab.HTMLs.Error;
           if (typeof callback === 'function')
-            callback(self, false);
-        }
+            callback(this, false);
+        }.bind(this)
       });
     },
     parse: function() {
@@ -671,7 +671,6 @@ DomainTab.prototype = Object.extend(
       if (this.element.firstElementChild.nodeName == 'P'
           && this.element.childElementCount == 1)
         return false;
-      var self = this;
       var rows = this.element.querySelectorAll(
         'div > table[summary=""] > tbody > tr:nth-of-type(odd)');
       this.tags = Array.map(
@@ -682,7 +681,7 @@ DomainTab.prototype = Object.extend(
           let (submit = tr.querySelectorAll('input[type="submit"]')) {
             tag.canLock = submit.length > 1;
             tag.canCategorize = tag.canLock
-              && CategoryTags[self.domain].include(tag.name);
+              && CategoryTags[this.domain].include(tag.name);
           };
           var [star, domain] = Array.prototype.partition.call(
             tr.querySelectorAll('td:first-child > span'),
@@ -692,11 +691,11 @@ DomainTab.prototype = Object.extend(
           if (domain.length > 0) {
             tag.domain = domain[0].textContent.replace(/\[|\]/g, '');
           } else {
-            tag.domain = self.domain;
+            tag.domain = this.domain;
           }
           tag.category = tr.querySelector('td:first-child > strong') != null;
           return tag;
-        });
+        }, this);
       return true;
     }
   });
@@ -836,12 +835,13 @@ TagList.prototype = {
       </strong>
     </div>.toDOM();
     domainElement.appendChild(Object.toDOM(' '));
-    var self = this;
 
-    var elems = tags.filter(function(t) t.domain === domain)
-      .map(function(t) t.element);
-    domainElement.appendChild(elems.joinDOM(' '));
-  this.element.appendChild(domainElement);
+    domainElement.appendChild(
+      tags.filter(function(t) t.domain === domain)
+          .map(function(t) t.element)
+          .joinDOM(' ')
+    );
+    this.element.appendChild(domainElement);
   }
 };
 var CustomTab = function() {
