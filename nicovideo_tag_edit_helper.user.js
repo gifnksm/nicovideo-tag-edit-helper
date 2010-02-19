@@ -76,26 +76,29 @@ Function.prototype.bind = function() {
 // XML (E4X)からDOM Nodeへの変換
 default xml namespace = "http://www.w3.org/1999/xhtml";
 (function() {
-   var fun = function(xmlns) {
+   var parser = new DOMParser(),
+       range = document.createRange();
+
+   function toDOM(xmlns) {
      var pretty = XML.prettyPrinting;
 
      // 余分な空白を混入させないように，prettyPrintingを一時的に無効にする
      XML.prettyPrinting = false;
-     var doc = (new DOMParser).parseFromString(
+     var doc = parser.parseFromString(
        '<root xmlns="' + xmlns + '">' + this.toXMLString() + "</root>",
        "application/xml");
      XML.prettyPrinting = pretty;
 
-     var imported = document.importNode(doc.documentElement, true);
-     var range = document.createRange();
-     range.selectNodeContents(imported);
+     range.selectNodeContents(
+       document.importNode(doc.documentElement, true));
      var fragment = range.extractContents();
-     range.detach();
      return fragment.childNodes.length > 1 ? fragment : fragment.firstChild;
    };
-   XML.prototype.function::toDOM = fun;
-   XMLList.prototype.function::toDOM = fun;
+
+   XML.prototype.function::toDOM = toDOM;
+   XMLList.prototype.function::toDOM = toDOM;
  })();
+
 // オブジェクトをDOMノードに変換する
 Object.toDOM = function(elem) {
   if (elem === null)
