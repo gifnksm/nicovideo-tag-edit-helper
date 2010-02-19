@@ -705,14 +705,12 @@ CustomTab.prototype = Object.extend(
     _createContent: function() {
       this.element.textContent = '';
 
-      var comment = <div>
-        まだできてないよ．
+      var comment =
         <form action="javascript: void(0);">
           <input class="submit" type="button"
                  onclick={'this.disabled = true; finishTagEdit();'}
                  value="編集を完了する" />
-        </form>
-      </div>;
+        </form>;
 
       var pager = new Pager([ i for (i in range(0, 300)) ]);
       var field = <div/>.toDOM();
