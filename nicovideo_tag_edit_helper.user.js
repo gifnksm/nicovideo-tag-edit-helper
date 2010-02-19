@@ -704,6 +704,7 @@ CustomTab.prototype = Object.extend(
   {
     _createContent: function() {
       this.element.textContent = '';
+      this.state = TabItem.State.Loading;
 
       var comment =
         <form action="javascript: void(0);">
@@ -725,15 +726,30 @@ CustomTab.prototype = Object.extend(
       this.element.appendChild([comment, pager.element, field].joinDOM());
 
       var c = this.container;
+      var loadingCount = 0, requestCount = DomainNames.length;
+      var self = this;
+
+      function loadedHandler(item, success) {
+        loadingCount--;
+
+        if (requestCount > 0 || loadingCount > 0)
+          return;
+
+        self.state = TabItem.State.Loaded;
+      }
+
       DomainNames.reduce(
         function(delay, domain) {
+          requestCount--;
           var item = c.get(domain);
-          if (item.loaded)
+          if (item.loaded) {
+            loadedHandler(item, true);
             return delay;
-          item.reload('', delay);
+          }
+          loadingCount++;
+          item.reload('', delay, loadedHandler);
           return delay + DomainTab.LoadDelay;
         }, 0);
-      this.state = TabItem.State.Loaded;
     }
   }
 );
@@ -835,6 +851,7 @@ unsafeWindow.refreshTagEdit = function(form, loadingContainer) {
 
   return false;
 };
+
 (function(original) {
    unsafeWindow.finishTagEdit = function(url) {
      original('http://' + location.host + '/tag_edit/' + VideoID);
