@@ -603,13 +603,13 @@ DomainTab.prototype = Object.extend(
           else
             self.state = TabItem.State.Error;
           if (typeof callback === 'function')
-            callback(success);
+            callback(self, success);
         },
         onerror: function(response) {
           self.state = TabItem.State.Error;
           self.element.innerHTML = DomainTab.HTMLs.Error;
           if (typeof callback === 'function')
-            callback(false);
+            callback(self, false);
         }
       });
     },
