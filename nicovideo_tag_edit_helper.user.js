@@ -587,9 +587,8 @@ TabItem.prototype = {
   get error() { return this.state   === TabItem.State.Error; },
   clearCache: function() { this.state = TabItem.State.Initial; },
   show: function() {
-    if (!this.loaded) {
+    if (!this.loaded)
       this._createContent();
-    }
     this._label.classList.add(TabItem.ClassNames.Selected);
     this.element.style.display = '';
   },
@@ -607,6 +606,7 @@ var DomainTab = function(domain) {
       <div class={cls(domain)}/>.toDOM());
   this.domain = domain;
   this._url = DomainHosts[domain] + 'tag_edit/' + VideoID;
+  this._callbacks = [];
 };
 DomainTab.getDomainImage = function(domain) {
   return <img src={'http://tw.nicovideo.jp/img/images/ww_'+domain+'.gif'} alt=''/>;
@@ -622,8 +622,19 @@ DomainTab.prototype = Object.extend(
     domain: null,
     tags: null,
     _url: null,
-    _createContent: function() { this.reload(''); },
+    stopLoading: false,
+    _createContent: function() {
+      if (this.stopLoading)
+        return;
+      this.reload('');
+    },
+    _callbacks: null,
     reload: function(data, delay, callback)  {
+      if (typeof(callback) === 'function')
+        this._callbacks.push(callback);
+      if (this.loading || this.waiting)
+        return;
+
       if (data === undefined) data = '';
       if (delay === undefined) delay = 0;
 
@@ -640,13 +651,13 @@ DomainTab.prototype = Object.extend(
         cd.ontick(delay);
         cd.ontimeout = function() {
           this.label.removeChild(timer);
-          this.state = TabItem.State.Loading;
-          this._startLoading(data, callback);
+          this._startLoading(data);
         }.bind(this);
         cd.start();
       };
     },
-    _startLoading: function(data, callback) {
+    _startLoading: function(data) {
+      this.state = TabItem.State.Loading;
       GM_xmlhttpRequest({
         method: 'POST',
         url: this._url,
@@ -658,20 +669,20 @@ DomainTab.prototype = Object.extend(
         onload: function(response) {
           this.element.innerHTML = response.responseText;
           var success = this.parse();
-          if (success)
-            this.state = TabItem.State.Loaded;
-          else
-            this.state = TabItem.State.Error;
-          if (typeof callback === 'function')
-            callback(this, success);
+          this.state = success ? TabItem.State.Loaded : TabItem.State.Error;
+          this._callCallbacks(success);
         }.bind(this),
         onerror: function(response) {
-          this.state = TabItem.State.Error;
           this.element.innerHTML = DomainTab.HTMLs.Error;
-          if (typeof callback === 'function')
-            callback(this, false);
+          this.state = TabItem.State.Error;
+          this._callCallbacks(false);
         }.bind(this)
       });
+    },
+    _callCallbacks: function(success) {
+      var fun;
+      while ((fun = this._callbacks.shift()) !== undefined)
+        fun(this, success);
     },
     parse: function() {
       // 子要素が唯一でP要素なら読み込みエラー (混雑中)
@@ -861,9 +872,12 @@ CustomTab.prototype = Object.extend(
   new TabItem(), {
     _tagList: null,
     _createContent: function() {
+      if (this.state == TabItem.State.Loading)
+        return;
+      this.state = TabItem.State.Loading;
+
       this.element.textContent = '';
       this._tagList.clear();
-      this.state = TabItem.State.Loading;
 
       var comment =
         <form action="javascript: void(0);">
@@ -884,11 +898,14 @@ CustomTab.prototype = Object.extend(
 
       this.element.appendChild([comment, this._tagList.element,
                                 pager.element, field].joinDOM());
-
       var self = this;
+      DomainNames.forEach(function(d) {
+                            self.container.get(d).stopLoading = true;
+                          });
       (function(resume) {
          for each(let [, domain] in Iterator(DomainNames)) {
            let item = self.container.get(domain);
+           item.stopLoading = false;
            if (item.loaded) {
              self._tagList.add(item);
              continue;
