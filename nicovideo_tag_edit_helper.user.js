@@ -113,7 +113,7 @@ Object.extend = function() {
     function(obj) {
       for (let key in obj) {
         if (!obj.hasOwnProperty(key))
-          return;
+          continue;
         var g = obj.__lookupGetter__(key), s = obj.__lookupSetter__(key);
         if (g) base.__defineGetter__(key, g);
         if (s) base.__defineSetter__(key, s);
