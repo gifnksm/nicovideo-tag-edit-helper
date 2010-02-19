@@ -627,8 +627,7 @@ DomainTab.prototype = Object.extend(
       if (data === undefined) data = '';
       if (delay === undefined) delay = 0;
 
-      var e = this.element;
-      e.innerHTML = DomainTab.HTMLs.Loading;
+      this.element.innerHTML = DomainTab.HTMLs.Loading;
       this.state = TabItem.State.Waiting;
       this.tags = null;
 
