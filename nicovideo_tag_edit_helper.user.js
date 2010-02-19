@@ -158,6 +158,7 @@ Object.memoize = function(obj, defs) {
     });
 };
 
+function evt(name) 'GM_NicovideoTagEditHelper_' + name;
 function cls() Array.map(
   arguments,
   function(n) '_GM_tag_edit_helper_' + n
@@ -347,7 +348,7 @@ Pager.ClassNames = {
   Disable: cls('disable-page'),
   Highlight: cls('highlight-page')
 };
-Pager.PageChangedEvent = 'GM_NicovideoTagEditHelper_PageChanged';
+Pager.PageChangedEvent = evt('PageChanged');
 Pager.prototype = {
   _currentPage: -1,
   get currentPage() { return this._currentPage; },
@@ -468,7 +469,7 @@ var Tab = function() {
 Tab.ClassNames = {
   Tab: cls('tab-tab')
 };
-Tab.SelectedChangedEvent = 'GM_NicovideoTagEditHelper_SelectedChanged';
+Tab.SelectedChangedEvent = evt('SelectedChanged');
 Tab.prototype = {
   _currentItem: null,
   get currentItem() { return this._currentItem; },
