@@ -246,6 +246,44 @@ const CountDownMessage = {
   es: function(c) { return '　Despue\'s de ' + c + ' S'; },
   de: function(c) { return 'Sekunden nach dem ' + c; }
 };
+const CategoryTags = {
+  jp: [
+    "エンターテイメント 音楽 スポーツ",
+    "動物 料理 日記 自然 科学 歴史 ラジオ ニコニコ動画講座",
+    "政治",
+    "歌ってみた 演奏してみた 踊ってみた 描いてみた ニコニコ技術部",
+    "アニメ ゲーム",
+    "アイドルマスター 東方 VOCALOID 例のアレ その他",
+    "R-18"
+  ].join(' ').split(/\s+/),
+  tw: [
+    "\u5a1b樂 音樂 運動",
+    "動物 料理 日記 自然 科學 \u6b77史 廣播電台 NICO動畫講座",
+    "政治",
+    "試唱 試奏 試跳 試畫 NICO技術部",
+    "動漫 遊戲",
+    "偶像大師 東方 VOCALOID 就是那個 其他",
+    "成人級"
+  ].join(' ').split(/\s+/),
+  es: [
+    "Entretenimiento Mu\u00fasica Deportes",
+    "Animales Cocina Diario Naturaleza Ciencia Historia Radio Curso_Niconico",
+    "Gobierno",
+    "Canto Concierto Danza 描いてみた ニコニコ技術部",
+    "Anime Juegos",
+    "アイドルマスター 東方 VOCALOID 例のアレ その他",
+    "M\u00e1s_de_18_a\u00f1os"
+  ].join(' ').split(/\s+/),
+  de: [
+    "Musik Unterhaltung Sport",
+    "Tiere Kochen Tagebuch Natur Naturwissenschaft Geschichte Radio NICO_Einf\u00fchrung",
+    "Politik",
+    "Mal_gesungen Mal_musiziert Mal_getanzt 描いてみた ニコニコ技術部",
+    "Anime Spiele",
+    "アイドルマスター 東方 VOCALOID 例のアレ その他",
+    "R-18"
+  ].join(' ').split(/\s+/)
+};
 
 var CountDownTimer = function(limit, tick) {
   if (tick === undefined || tick === 0 || tick >= limit) {
