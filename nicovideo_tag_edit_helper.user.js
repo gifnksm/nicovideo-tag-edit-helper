@@ -180,6 +180,15 @@ var HTMLUtil = {
     var l = <a href="javascript: void(0);">{text}</a>.toDOM();
     l.addEventListener('click', command, false);
     return l;
+  },
+  toggleLink: function(text, command, initial) {
+    var value = Boolean(initial);
+    return this.commandLink(
+      text,
+      function(e) {
+        value = !value;
+        command.call(this, value, e);
+      });
   }
 };
 
