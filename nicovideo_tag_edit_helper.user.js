@@ -677,7 +677,8 @@ DomainTab.prototype = Object.extend(
           tag.name = tr.querySelector('td:first-child').firstChild.textContent;
           let (submit = tr.querySelectorAll('input[type="submit"]')) {
             tag.canLock = submit.length > 1;
-            tag.canCategorize = submit.length > 2;
+            tag.canCategorize = tag.canLock
+              && CategoryTags[self.domain].include(tag.name);
           };
           var [star, domain] = Array.prototype.partition.call(
             tr.querySelectorAll('td:first-child > span'),
