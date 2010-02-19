@@ -14,7 +14,7 @@
 .__tab-tab__ {
   font-size: 12px;
 }
-.__tab-tab__ a {
+.__tab-tab__ > a {
   display: inline-block;
   margin: 0 5px -2px 0;
   padding: 3px 5px;
@@ -25,6 +25,11 @@
   -moz-border-radius-topleft: 5px;
   -moz-border-radius-topright: 5px;
   line-height: 18px;
+  -moz-outline-radius-topleft: 5px;
+  -moz-outline-radius-topright: 5px;
+}
+.__tab-tab__ > a:focus {
+  outline: 1px dotted black;
 }
 .__tab-tab__ a:hover {
   background-color: lightyellow;
@@ -56,6 +61,7 @@
 .__tab-tab__ a span.__tab-timer__ {
   font-size: 80%;
   margin-left: 3px;
+  vertical-align: top;
 }
 .__tab-item__ {
   padding: 10px;
