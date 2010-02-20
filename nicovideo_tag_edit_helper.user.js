@@ -847,21 +847,18 @@ TagList.prototype = {
   add: function(item) {
     var domain = item.domain;
     this._originalTagData[domain] = item.tags.slice();
-    var tags = this._tags[domain] = item.tags.map(function(t) new Tag(t));
+    this._tags[domain] = item.tags.map(function(t) new Tag(t));
 
-    var domainElement =
-      <div class={TagList.Classes.DomainList}>
+    var tags = this._tags[domain].filter(function(t) t.domain === domain);
+
+    var domainHeader =
         <strong class={TagList.Classes.DomainListHeader}>
-          {DomainTab.getDomainImage(domain)}{DomainLabels[domain]}:
-        </strong>
-      </div>.toDOM();
-    domainElement.appendChild(Object.toDOM(' '));
+          {DomainTab.getDomainImage(domain)}{DomainLabels[domain]} ({tags.length}):
+        </strong>;
+    var domainElement = <div class={TagList.Classes.DomainList}/>.toDOM();
 
     domainElement.appendChild(
-      tags.filter(function(t) t.domain === domain)
-          .map(function(t) t.element)
-          .joinDOM(' ')
-    );
+      [domainHeader, tags.map(function(t) t.element).joinDOM(' ')].joinDOM(' '));
     this.element.appendChild(domainElement);
   }
 };
