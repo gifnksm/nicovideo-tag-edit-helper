@@ -896,7 +896,7 @@ CustomTab.prototype = Object.extend(
 
       this.element.appendChild([comment, this._tagList.element,
                                 pager.element, field].joinDOM());
-      var self = this;
+      var self = this, isFirst = true;
       DomainNames.forEach(function(d) {
                             self.container.get(d).stopLoading = true;
                           });
@@ -909,10 +909,11 @@ CustomTab.prototype = Object.extend(
              continue;
            }
            yield item.reload(
-             '', DomainTab.LoadDelay,
+             '', isFirst ? 0 : DomainTab.LoadDelay,
              function(item, success) {
                if (success)
                  self._tagList.add(item);
+               isFirst = false;
                resume();
              });
          }
