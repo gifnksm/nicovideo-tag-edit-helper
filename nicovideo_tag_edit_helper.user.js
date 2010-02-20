@@ -200,15 +200,12 @@ var HTMLUtil = {
     var value = Boolean(initial);
     return this.commandLink(
       text,
-      function(e) {
-        value = !value;
-        command.call(this, value, e);
-      });
+      function(e) { value = command.call(this, !value, e); });
   },
   propertyToggler: function(text, obj, propName) {
     return this.toggleLink(
       text,
-      function(value) { obj[propName] = value; },
+      function(value) { return obj[propName] = value; },
       obj[propName]
     );
   }
