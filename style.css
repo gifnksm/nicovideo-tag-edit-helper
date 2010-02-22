@@ -75,13 +75,11 @@
   border: none !important;
 }
 .__tag-list__ {
-  font-size: 12px;
-  word-spacing: 10px;
-}
-.__tag-list__ .__tag-list__ {
   margin: 5px 0 0;
   padding: 5px;
   border: 1px solid silver;
+  font-size: 12px;
+  word-spacing: 10px;
 }
 .__tag-list__ .__tag-list-header__ {
   word-spacing: 0;

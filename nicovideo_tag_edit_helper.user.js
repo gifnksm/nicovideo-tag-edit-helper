@@ -829,44 +829,54 @@ Object.memoizePrototype(
   });
 
 var TagList = function() {
-  this._tags = {};
-  this._originalTagData = {};
   this.element = <div class={TagList.Classes.Element}/>.toDOM();
 };
 TagList.Classes = {
   Element: cls('tag-list'),
   Header: cls('tag-list-header')
 };
+TagList.createDomainHeader = function(domain) {
+  return <strong class={TagList.Classes.Header}>
+    {DomainTab.getDomainImage(domain)}{DomainLabels[domain]}:
+  </strong>.toDOM();
+};
 TagList.prototype = {
   element: null,
   _tags: null,
   _originalTagData: null,
+  _header: null,
+  get header() {
+    if (this._header === null)
+      this._header = <strong class={TagList.Classes.Header}/>.toDOM();
+    return this._header;
+  },
+  set header(value) {
+    var old = this._header;
+    if (old !== null && old.parentNode !== null)
+      old.parentNode.replaceChild(value, old);
+    return this._header = value;
+  },
   clear: function() {
     this._tags = {};
     this._originalTags = {};
     this.element.textContent = '';
   },
-  add: function(item) {
-    var domain = item.domain;
-    this._originalTagData[domain] = item.tags.slice();
-    this._tags[domain] = item.tags.map(function(t) new Tag(t));
+  update: function(tagData) {
+    this._originalTagData = tagData.slice();
+    this._tags = tagData.map(function(t) new Tag(t));
 
-    var tags = this._tags[domain].filter(function(t) t.domain === domain);
-
-    var domainHeader =
-        <strong class={TagList.Classes.Header}>
-          {DomainTab.getDomainImage(domain)}{DomainLabels[domain]} ({tags.length}):
-        </strong>;
-    var domainElement = <div class={TagList.Classes.Element}/>.toDOM();
-
-    domainElement.appendChild(
-      [domainHeader, tags.map(function(t) t.element).joinDOM(' ')].joinDOM(' '));
-    this.element.appendChild(domainElement);
+    this.element.appendChild(
+      [this.header,
+       this._tags.map(function(t) t.element).joinDOM(' ')].joinDOM(' '));
   }
 };
 var CustomTab = function() {
   this.init('カスタム', <div class={cls('custom-form')}/>.toDOM());
-  this._tagList = new TagList();
+  this._tagList = {};
+  for each (let [, d] in Iterator(DomainNames)) {
+    this._tagList[d] = new TagList();
+    this._tagList[d].header = TagList.createDomainHeader(d);
+  }
 };
 CustomTab.prototype = Object.extend(
   new TabItem(), {
@@ -877,7 +887,8 @@ CustomTab.prototype = Object.extend(
       this.state = TabItem.State.Loading;
 
       this.element.textContent = '';
-      this._tagList.clear();
+      for each (let [, d] in Iterator(DomainNames))
+        this._tagList[d].clear();
 
       var comment =
         <form action="javascript: void(0);">
@@ -896,25 +907,32 @@ CustomTab.prototype = Object.extend(
         },
         false);
 
-      this.element.appendChild([comment, this._tagList.element,
-                                pager.element, field].joinDOM());
+      this.element.appendChild(
+        [comment,
+         DomainNames.map(function(d) this._tagList[d].element, this),
+         pager.element, field
+        ].joinDOM());
       var self = this, isFirst = true;
       DomainNames.forEach(function(d) {
                             self.container.get(d).stopLoading = true;
                           });
       (function(resume) {
          for each(let [, domain] in Iterator(DomainNames)) {
+           function update(item) {
+             self._tagList[domain].update(
+               item.tags.filter(function(t) t.domain === domain));
+           }
            let item = self.container.get(domain);
            item.stopLoading = false;
            if (item.loaded) {
-             self._tagList.add(item);
+             update(item);
              continue;
            }
            yield item.reload(
              '', isFirst ? 0 : DomainTab.LoadDelay,
              function(item, success) {
                if (success)
-                 self._tagList.add(item);
+                 update(item);
                isFirst = false;
                resume();
              });
