@@ -830,52 +830,42 @@ Object.memoizePrototype(
 
 var TagList = function() {
   this.element = <div class={TagList.Classes.Element}/>.toDOM();
+  this.element.appendChild([this.header, this.body].joinDOM());
 };
 TagList.Classes = {
   Element: cls('tag-list'),
-  Header: cls('tag-list-header')
+  Header: cls('tag-list-header'),
+  Body: cls('tag-list-body')
 };
 TagList.createDomainHeader = function(domain) {
-  return <strong class={TagList.Classes.Header}>
-    {DomainTab.getDomainImage(domain)}{DomainLabels[domain]}:
-  </strong>.toDOM();
+  return <>{DomainTab.getDomainImage(domain)}{DomainLabels[domain]}:</>.toDOM();
 };
 TagList.prototype = {
   element: null,
   _tags: null,
   _originalTagData: null,
-  _header: null,
-  get header() {
-    if (this._header === null)
-      this._header = <strong class={TagList.Classes.Header}/>.toDOM();
-    return this._header;
-  },
-  set header(value) {
-    var old = this._header;
-    if (old !== null && old.parentNode !== null)
-      old.parentNode.replaceChild(value, old);
-    return this._header = value;
-  },
   clear: function() {
     this._tags = {};
     this._originalTags = {};
-    this.element.textContent = '';
+    this.body.textContent = '';
   },
   update: function(tagData) {
     this._originalTagData = tagData.slice();
     this._tags = tagData.map(function(t) new Tag(t));
-
-    this.element.appendChild(
-      [this.header,
-       this._tags.map(function(t) t.element).joinDOM(' ')].joinDOM(' '));
+    this.body.appendChild(this._tags.map(function(t) t.element).joinDOM(' '));
   }
 };
+Object.memoizePrototype(
+  TagList.prototype, {
+    header: function() { return <strong class={TagList.Classes.Header}/>.toDOM(); },
+    body: function() { return <span class={TagList.Classes.Body}/>.toDOM(); }
+  });
 var CustomTab = function() {
   this.init('カスタム', <div class={cls('custom-form')}/>.toDOM());
   this._tagList = {};
   for each (let [, d] in Iterator(DomainNames)) {
     this._tagList[d] = new TagList();
-    this._tagList[d].header = TagList.createDomainHeader(d);
+    this._tagList[d].header.appendChild(TagList.createDomainHeader(d));
   }
 };
 CustomTab.prototype = Object.extend(

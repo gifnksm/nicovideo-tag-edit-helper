@@ -79,14 +79,16 @@
   padding: 5px;
   border: 1px solid silver;
   font-size: 12px;
-  word-spacing: 10px;
 }
 .__tag-list__ .__tag-list-header__ {
-  word-spacing: 0;
+  margin-right: 5px;
 }
 .__tag-list__ .__tag-list-header__ img {
   vertical-align: top;
   margin-right: 3px;
+}
+.__tag-list__ .__tag-list-body__ {
+  word-spacing: 10px;
 }
 .__tag-list__ .__tag__.__tag-locked__ .__tag-locked-mark__ {
   color: #f90;
