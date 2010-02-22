@@ -665,8 +665,14 @@ DomainTab.prototype = Object.extend(
         },
         data: data,
         onload: function(response) {
-          this.element.innerHTML = response.responseText;
-          var success = this.parse();
+          var success;
+          if (response.responseText.indexOf('<!DOCTYPE') == 0) {
+            this.element.innerHTML = DomainTab.HTMLs.Error;
+            success = false;
+          } else {
+            this.element.innerHTML = response.responseText;
+            success = this.parse();
+          }
           this.state = success ? TabItem.State.Loaded : TabItem.State.Error;
           this._callCallbacks(success);
         }.bind(this),
