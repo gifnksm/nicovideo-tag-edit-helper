@@ -671,7 +671,7 @@ DomainTab.prototype = Object.extend(
             success = false;
           } else {
             this.element.innerHTML = response.responseText;
-            success = this.parse();
+            success = this._parse();
           }
           this.state = success ? TabItem.State.Loaded : TabItem.State.Error;
           this._callCallbacks(success);
@@ -688,7 +688,7 @@ DomainTab.prototype = Object.extend(
       while ((fun = this._callbacks.shift()) !== undefined)
         fun(this, success);
     },
-    parse: function() {
+    _parse: function() {
       // 子要素が唯一でP要素なら読み込みエラー (混雑中)
       if (this.element.firstElementChild.nodeName == 'P'
           && this.element.childElementCount == 1)
