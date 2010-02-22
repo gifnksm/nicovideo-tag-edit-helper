@@ -78,15 +78,15 @@
   font-size: 12px;
   word-spacing: 10px;
 }
-.__tag-list__ .__tag-domain-list__ {
+.__tag-list__ .__tag-list__ {
   margin: 5px 0 0;
   padding: 5px;
   border: 1px solid silver;
 }
-.__tag-list__ .__tag-domain-list-header__ {
+.__tag-list__ .__tag-list-header__ {
   word-spacing: 0;
 }
-.__tag-list__ .__tag-domain-list-header__ img {
+.__tag-list__ .__tag-list-header__ img {
   vertical-align: top;
   margin-right: 3px;
 }

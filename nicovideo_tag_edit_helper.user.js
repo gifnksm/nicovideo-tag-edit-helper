@@ -835,8 +835,7 @@ var TagList = function() {
 };
 TagList.Classes = {
   Element: cls('tag-list'),
-  DomainList: cls('tag-domain-list'),
-  DomainListHeader: cls('tag-domain-list-header')
+  Header: cls('tag-list-header')
 };
 TagList.prototype = {
   element: null,
@@ -855,10 +854,10 @@ TagList.prototype = {
     var tags = this._tags[domain].filter(function(t) t.domain === domain);
 
     var domainHeader =
-        <strong class={TagList.Classes.DomainListHeader}>
+        <strong class={TagList.Classes.Header}>
           {DomainTab.getDomainImage(domain)}{DomainLabels[domain]} ({tags.length}):
         </strong>;
-    var domainElement = <div class={TagList.Classes.DomainList}/>.toDOM();
+    var domainElement = <div class={TagList.Classes.Element}/>.toDOM();
 
     domainElement.appendChild(
       [domainHeader, tags.map(function(t) t.element).joinDOM(' ')].joinDOM(' '));
