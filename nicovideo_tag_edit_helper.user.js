@@ -881,9 +881,10 @@ CustomTab.prototype = Object.extend(
         this._tagList[d].clear();
 
       var comment =
-        <form action="javascript: void(0);">
+        <form action="javascript: void(0);" style="padding: 4px">
+          登録タグを編集中…&#160;
           <input class="submit" type="button"
-                 onclick={'this.disabled = true; finishTagEdit();'}
+                 onclick="this.disabled = true; finishTagEdit();"
                  value="編集を完了する" />
         </form>;
 

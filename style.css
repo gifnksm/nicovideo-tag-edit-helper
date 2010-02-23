@@ -74,11 +74,13 @@
 .__tab-item__ > div.tag_frm {
   border: none !important;
 }
+.__tab-item__.__custom-form__ {
+  font-size: 12px;
+}
 .__tag-list__ {
   margin: 5px 0 0;
   padding: 5px;
   border: 1px solid silver;
-  font-size: 12px;
 }
 .__tag-list__ .__tag-list-header__ {
   margin-right: 5px;
