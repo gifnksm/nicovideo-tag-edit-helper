@@ -20,63 +20,89 @@ const console =
   : {__noSuchMethod__: function() {} };
 
 
-
-// prototype拡張
-Array.prototype.include = function(x) this.indexOf(x) != -1;
-Array.prototype.partition = function(fun, thisp) {
-  if (typeof fun != 'function')
-    throw new TypeError();
-
-  var res1 = [], res2 = [];
-  for (var i = 0, len = this.length; i < len; i++) {
-    if (i in this) {
-      if (fun.call(thisp, this[i], i, this))
-        res1.push(this[i]);
-      else
-        res2.push(this[i]);
-    }
-  }
-  return [res1, res2];
+// 継承を行なう関数 (getter, setter 対応)
+Object.extend = function() {
+  var base = arguments[0];
+  Array.slice(arguments, 1).forEach(
+    function(obj) {
+      for (let key in obj) {
+        if (!obj.hasOwnProperty(key))
+          continue;
+        var g = obj.__lookupGetter__(key),
+            s = obj.__lookupSetter__(key);
+        if (g) base.__defineGetter__(key, g);
+        if (s) base.__defineSetter__(key, s);
+        if (!g && !s) base[key] = obj[key];
+      }
+    });
+  return base;
 };
 
-// DOM要素を結合する。引数はScalaのmkString風
-Array.prototype.joinDOM = function() {
-  var [sep, head, tail] = [null, null, null],
+// prototype拡張など
+
+Object.extend(
+  Array.prototype,
+  {
+    include: function(x) this.indexOf(x) != -1,
+    partition : function(fun, thisp) {
+      if (typeof fun != 'function')
+        throw new TypeError();
+
+      var res1 = [], res2 = [];
+      for (var i = 0, len = this.length; i < len; i++) {
+        if (i in this) {
+          if (fun.call(thisp, this[i], i, this))
+            res1.push(this[i]);
+          else
+            res2.push(this[i]);
+        }
+      }
+      return [res1, res2];
+    },
+    // DOM要素を結合する。引数はScalaのmkString風
+    joinDOM: function() {
+      var [sep, head, tail] = [null, null, null],
       arg = Array.map(arguments, Object.toDOM);
 
-  switch(arg.length) {
-  case 0: break;
-  case 1: [sep] = arg; break;
-  case 3: [head, sep, tail] = arg; break;
-  default: throw new Error('invalid arguments');
-  }
+      switch(arg.length) {
+      case 0: break;
+      case 1: [sep] = arg; break;
+      case 3: [head, sep, tail] = arg; break;
+      default: throw new Error('invalid arguments');
+      }
 
-  var df = document.createDocumentFragment();
-  function append(e, clone) {
-    if (e !== null) df.appendChild(clone ? e.cloneNode(true) : e);
-  }
+      var df = document.createDocumentFragment();
+      function append(e, clone) {
+        if (e !== null) df.appendChild(clone ? e.cloneNode(true) : e);
+      }
 
-  append(head);
-  for (let [i, elem] in Iterator(this)) {
-    if (i > 0) append(sep, true);
-    append(Object.toDOM(elem));
-  }
-  append(tail);
+      append(head);
+      for (let [i, elem] in Iterator(this)) {
+        if (i > 0) append(sep, true);
+        append(Object.toDOM(elem));
+      }
+      append(tail);
 
-  return df;
-};
+      return df;
+    }
+  });
 
-Function.prototype.bind = function() {
-  var self = this,
+Object.extend(
+  Function.prototype,
+  {
+    bind: function() {
+      var self = this,
       obj = Array.shift(arguments),
       args = Array.slice(arguments);
-  return function() self.apply(obj, args.concat(Array.slice(arguments)));
-};
-
-Function.prototype.go = function() {
-  var g = this(function(t) { try { g.send(t); } catch (e) {} });
-  g.next();
-};
+      return function() self.apply(obj, args.concat(Array.slice(arguments)));
+    },
+    // 非同期処理を同期処理っぽく書く
+    // http://d.hatena.ne.jp/amachang/20080303/1204544340
+    go: function() {
+      var g = this(function(t) { try { g.send(t); } catch (e) {} });
+      g.next();
+    }
+  });
 
 // XML (E4X)からDOM Nodeへの変換
 default xml namespace = "http://www.w3.org/1999/xhtml";
@@ -104,73 +130,66 @@ default xml namespace = "http://www.w3.org/1999/xhtml";
    XMLList.prototype.function::toDOM = toDOM;
  })();
 
-// オブジェクトをDOMノードに変換する
-Object.toDOM = function(elem) {
-  if (elem === null)
-    return null;
-  if (elem instanceof String || typeof elem === 'string')
-    return document.createTextNode(elem);
-  if (elem instanceof XML)
-    return elem.toDOM();
-  if (elem instanceof Array)
-    return elem.joinDOM();
-  return elem;
-};
-Object.forEach = function(obj, fun) {
-  for (key in obj)
-    if (obj.hasOwnProperty(key))
-      fun(obj[key], key, obj);
-};
-Object.clone = function(obj) {
-  var clone = {};
-  for (let key in obj) {
-    if (!obj.hasOwnProperty(key))
-      continue;
-    var g = obj.__lookupGetter__(key), s = obj.__lookupSetter__(key);
-    if (g) clone.__defineGetter__(key, g);
-    if (s) clone.__defineSetter__(key, s);
-    if (!g && !s) clone[key] = obj[key];
-  }
-  return clone;
-};
-Object.extend = function() {
-  var base = arguments[0];
-  Array.slice(arguments, 1).forEach(
-    function(obj) {
+Object.extend(
+  Object,
+  {
+    // 任意のオブジェクトをDOMノードに変換する
+    toDOM: function(obj) {
+      if (obj === null)
+        return null;
+      if (obj instanceof String || typeof obj === 'string')
+        return document.createTextNode(obj);
+      if (obj instanceof XML)
+        return obj.toDOM();
+      if (obj instanceof Array)
+        return obj.joinDOM();
+      return obj;
+    },
+    // オブジェクトのイテレータ
+    forEach: function(obj, fun) {
+      for (key in obj)
+        if (obj.hasOwnProperty(key))
+          fun(obj[key], key, obj);
+    },
+    clone: function(obj) {
+      var clone = {};
       for (let key in obj) {
         if (!obj.hasOwnProperty(key))
           continue;
-        var g = obj.__lookupGetter__(key), s = obj.__lookupSetter__(key);
-        if (g) base.__defineGetter__(key, g);
-        if (s) base.__defineSetter__(key, s);
-        if (!g && !s) base[key] = obj[key];
+        var g = obj.__lookupGetter__(key),
+            s = obj.__lookupSetter__(key);
+        if (g) clone.__defineGetter__(key, g);
+        if (s) clone.__defineSetter__(key, s);
+        if (!g && !s) clone[key] = obj[key];
       }
-    });
-  return base;
-};
-Object.memoizePrototype = function(obj, defs) {
-  Object.forEach(
-    defs,
-    function(getter, key) {
-      obj.__defineGetter__(
-        key, function() {
-          var val = getter.call(this);
-          this.__defineGetter__(key, function() val);
-          return val;
+      return clone;
+    },
+    memoizePrototype : function(obj, defs) {
+      Object.forEach(
+        defs,
+        function(getter, key) {
+          obj.__defineGetter__(
+            key, function() {
+              var val = getter.call(this);
+              this.__defineGetter__(key, function() val);
+              return val;
+            });
         });
-    });
-};
-Object.memoize = function(obj, defs) {
-  Object.forEach(
-    defs,
-    function(getter, key) {
-      obj.__defineGetter__(
-        key, function() {
-          delete this[key];
-          return this[key] = getter.call(this);
+    },
+    memoize: function(obj, defs) {
+      Object.forEach(
+        defs,
+        function(getter, key) {
+          obj.__defineGetter__(
+            key, function() {
+              delete this[key];
+              return this[key] = getter.call(this);
+            });
         });
-    });
-};
+    }
+  });
+
+// ユーティリティ関数
 
 function evt(name) 'GM_NicovideoTagEditHelper_' + name;
 function cls() Array.map(
