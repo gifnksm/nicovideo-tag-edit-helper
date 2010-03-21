@@ -205,7 +205,7 @@ var HTMLUtil = {
   propertyToggler: function(text, obj, propName) {
     return this.toggleLink(
       text,
-      function(value) { return obj[propName] = value; },
+      function(value) obj[propName] = value,
       obj[propName]
     );
   }
@@ -255,10 +255,10 @@ const TagEditLoadingStatus = {
   }
 };
 const CountDownMessage = {
-  jp: function(c) { return '　あと ' + c + ' 秒'; },
-  tw: function(c) { return '　還剩 ' + c + ' 秒'; },
-  es: function(c) { return '　Despue\'s de ' + c + ' S'; },
-  de: function(c) { return 'Sekunden nach dem ' + c; }
+  jp: function(c) '　あと ' + c + ' 秒',
+  tw: function(c) '　還剩 ' + c + ' 秒',
+  es: function(c) '　Despue\'s de ' + c + ' S',
+  de: function(c) 'Sekunden nach dem ' + c
 };
 const CategoryTags = {
   jp: [
@@ -318,7 +318,7 @@ CountDownTimer.prototype = {
   _startInterval: function() {
     if (this._timer !== null)
       return;
-    var now = function () { return (new Date()).getTime(); };
+    var now = function () (new Date()).getTime();
     var next = now() + this._limit;
     this._timer = setInterval(
       function() {
@@ -361,31 +361,31 @@ Pager.ClassNames = {
 Pager.PageChangedEvent = evt('PageChanged');
 Pager.prototype = {
   _currentPage: -1,
-  get currentPage() { return this._currentPage; },
+  get currentPage() this._currentPage,
   _element: null,
-  get element() { return this._element; },
+  get element() this._element,
   _itemsPerPage: 5,
-  get itemsPerPage() { return this._itemsPerPage; },
+  get itemsPerPage() this._itemsPerPage,
   set itemsPerPage(value) {
     this._itemsPerPage = value;
     this._update();
     return this._itemsPerPage;
   },
   _maxShowPage: 10,
-  get maxShowPage() { return this._maxShowPage;},
+  get maxShowPage() this._maxShowPage,
   set maxShowPage(value) {
     this._maxShowPage = value;
     this._update();
     return this._maxShowPage;
   },
   _items: null,
-  get items() { return this._items; },
+  get items() this._items,
   set items(value) {
     this._items = value;
     this._update();
     return this._items;
   },
-  get currentItems() { return this._pages[this.currentPage]; },
+  get currentItems() this._pages[this.currentPage],
   _pages: null,
   _links: null,
   _update: function() {
@@ -460,12 +460,8 @@ Pager.prototype = {
 };
 Object.memoizePrototype(
   Pager.prototype, {
-    _prevLink: function() {
-      return HTMLUtil.commandLink('\xab', this.prev.bind(this));
-    },
-    _nextLink: function() {
-      return HTMLUtil.commandLink('\xbb', this.next.bind(this));
-    }
+    _prevLink: function() HTMLUtil.commandLink('\xab', this.prev.bind(this)),
+    _nextLink: function() HTMLUtil.commandLink('\xbb', this.next.bind(this))
 });
 
 
@@ -479,16 +475,16 @@ Tab.ClassNames = {
 Tab.SelectedChangedEvent = evt('SelectedChanged');
 Tab.prototype = {
   _currentItem: null,
-  get currentItem() { return this._currentItem; },
+  get currentItem() this._currentItem,
   _selector: null,
-  get selector() { return this._selector; },
+  get selector() this._selector,
   _items: null,
   add: function(name, item) {
     this._items[name] = item;
     item.container = this;
     this.selector.appendChild(item.label);
   },
-  get: function(name) { return this._items[name] || null; },
+  get: function(name) this._items[name] || null,
   getName: function(item) {
     for (let key in this._items) {
       if (this._items.hasOwnProperty(key) && this._items[key] === item)
@@ -558,11 +554,11 @@ TabItem.prototype = {
     element.classList.add(TabItem.ClassNames.Element);
   },
   _label: null,
-  get label() { return this._label; },
+  get label() this._label,
   _element: null,
-  get element() { return this._element; },
+  get element() this._element,
   _state: TabItem.State.Initial,
-  get state() { return this._state; },
+  get state() this._state,
   set state(state) {
     var cl = this._label.classList, c = TabItem.ClassNames, s = TabItem.State;
     for each (let [,name] in Iterator([c.Waiting, c.Loading, c.Loaded, c.Error])) {
@@ -578,10 +574,10 @@ TabItem.prototype = {
     }
     this._state = state;
   },
-  get waiting() { return this.state === TabItem.State.Waiting; },
-  get loading() { return this.state === TabItem.State.Loading; },
-  get loaded() { return this.state  === TabItem.State.Loaded; },
-  get error() { return this.state   === TabItem.State.Error; },
+  get waiting() this.state === TabItem.State.Waiting,
+  get loading() this.state === TabItem.State.Loading,
+  get loaded() this.state  === TabItem.State.Loaded,
+  get error() this.state   === TabItem.State.Error,
   clearCache: function() { this.state = TabItem.State.Initial; },
   show: function() {
     if (!this.loaded)
@@ -606,9 +602,8 @@ var DomainTab = function(domain) {
   this._url = DomainHosts[domain] + 'tag_edit/' + VideoID;
   this._callbacks = [];
 };
-DomainTab.getDomainImage = function(domain) {
-  return <img src={'http://tw.nicovideo.jp/img/images/ww_'+domain+'.gif'} alt=''/>;
-};
+DomainTab.getDomainImage = function(domain)
+  <img src={'http://tw.nicovideo.jp/img/images/ww_'+domain+'.gif'} alt=''/>;
 DomainTab.LoadDelay = 3000;
 DomainTab.HTMLs = {
   Loading: '<img src="img/watch/tool_loading.gif" alt="処理中">',
@@ -745,19 +740,19 @@ Tag.Classes = {
 };
 Tag.prototype = {
   _locked: null,
-  get locked() { return this._locked; },
+  get locked() this._locked,
   set locked(value) {
     this._locked = value;
     this._updateClass();
   },
   _category: null,
-  get category() { return this._category; },
+  get category() this._category,
   set category(value) {
     this._category = value;
     this._updateClass();
   },
   _deleted: null,
-  get deleted() { return this._deleted; },
+  get deleted() this._deleted,
   set deleted(value) {
     this._deleted = value;
     this._updateClass();
@@ -802,20 +797,17 @@ Tag.prototype = {
 };
 Object.memoizePrototype(
   Tag.prototype, {
-    _nameElement: function() {
-      return <span class={Tag.Classes.Name}>{this.name}</span>.toDOM();
-    },
-    _lockedElement: function() {
-      return <span class={Tag.Classes.LockedMark}>★</span>.toDOM();
-    },
+    _nameElement: function()
+      <span class={Tag.Classes.Name}>{this.name}</span>.toDOM(),
+    _lockedElement: function()
+      <span class={Tag.Classes.LockedMark}>★</span>.toDOM(),
     _lockToggle: function() {
       var l = HTMLUtil.propertyToggler('★', this, 'locked');
       l.classList.add(Tag.Classes.LockToggle);
       return l;
     },
-    _categoryElement: function() {
-      return <span class={Tag.Classes.CategoryMark}>カテゴリ</span>.toDOM();
-    },
+    _categoryElement: function()
+      <span class={Tag.Classes.CategoryMark}>カテゴリ</span>.toDOM(),
     _categoryToggle: function() {
       var l = HTMLUtil.propertyToggler('カテゴリ', this, 'category');
       l.classList.add(Tag.Classes.CategoryToggle);
@@ -837,9 +829,8 @@ TagList.Classes = {
   Header: cls('tag-list-header'),
   Body: cls('tag-list-body')
 };
-TagList.createDomainHeader = function(domain) {
-  return <>{DomainTab.getDomainImage(domain)}{DomainLabels[domain]}:</>.toDOM();
-};
+TagList.createDomainHeader = function(domain)
+  <>{DomainTab.getDomainImage(domain)}{DomainLabels[domain]}:</>.toDOM();
 TagList.prototype = {
   element: null,
   _tags: null,
@@ -857,8 +848,8 @@ TagList.prototype = {
 };
 Object.memoizePrototype(
   TagList.prototype, {
-    header: function() { return <strong class={TagList.Classes.Header}/>.toDOM(); },
-    body: function() { return <span class={TagList.Classes.Body}/>.toDOM(); }
+    header: function() <strong class={TagList.Classes.Header}/>.toDOM(),
+    body: function() <span class={TagList.Classes.Body}/>.toDOM()
   });
 var CustomTab = function() {
   this.init('カスタム', <div class={cls('custom-form')}/>.toDOM());
@@ -1011,9 +1002,8 @@ unsafeWindow.refreshTagEdit = function(form, loadingContainer) {
 
   var param = Array.map(
     form.elements,
-    function(elem) {
-      return encodeURI(elem.name) + "=" + encodeURI(elem.value);
-    }).join('&');
+    function(elem) encodeURI(elem.name) + "=" + encodeURI(elem.value)
+  ).join('&');
 
   let (cd = new CountDownTimer(3000, 300)) {
     cd.ontick = function(d) {
