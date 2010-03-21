@@ -31,16 +31,13 @@ function cls() Array.map(
 GM_addStyle(
   GM_getResourceText('style').replace(/__(.+?)__/g, function(_, name) cls(name)));
 
-function setClass(elem, name, flag) {
-  if (flag)
-    elem.classList.add(name);
-  else
-    elem.classList.remove(name);
-}
-
 function range(a, b) { for (let i = a; i < b; i++) yield i; }
 
 var HTMLUtil = {
+  setClass: function(elem, name, flag) {
+    if (flag) elem.classList.add(name);
+    else elem.classList.remove(name);
+  },
   commandLink: function(text, command) {
     var l = <a href="javascript: void(0);">{text}</a>.toDOM();
     l.addEventListener('click', command, false);
@@ -215,11 +212,11 @@ Pager.prototype = {
     }
 
     let (c = Pager.ClassNames) {
-      setClass(this._prevLink, c.Disable, page == 0);
-      setClass(this._nextLink, c.Disable, page == last);
+      HTMLUtil.setClass(this._prevLink, c.Disable, page == 0);
+      HTMLUtil.setClass(this._nextLink, c.Disable, page == last);
       this._links.forEach(
         function(l, i) {
-          setClass(l, c.Highlight, i == page);
+          HTMLUtil.setClass(l, c.Highlight, i == page);
           l.style.display = (i < minIdx || i > maxIdx) ? 'none' : '';
         });
     };
@@ -234,7 +231,6 @@ Object.memoizePrototype(
     _prevLink: function() HTMLUtil.commandLink('\xab', this.prev.bind(this)),
     _nextLink: function() HTMLUtil.commandLink('\xbb', this.next.bind(this))
 });
-
 
 var Tab = function() {
   this._items = {};
@@ -531,9 +527,9 @@ Tag.prototype = {
   _updateClass: function() {
     if (this._element === null)
       return;
-    setClass(this.element, Tag.Classes.Locked, this.locked);
-    setClass(this.element, Tag.Classes.Category, this.category);
-    setClass(this.element, Tag.Classes.Deleted, this.deleted);
+    HTMLUtil.setClass(this.element, Tag.Classes.Locked, this.locked);
+    HTMLUtil.setClass(this.element, Tag.Classes.Category, this.category);
+    HTMLUtil.setClass(this.element, Tag.Classes.Deleted, this.deleted);
   },
   _element: null,
   get element() {
