@@ -156,62 +156,47 @@ Pager.prototype = {
   get currentItems() this._pages[this.currentPage],
   _pages: null,
   _links: null,
-  _update: function() {
-    this.element.textContent = '';
-    var c = Pager.ClassNames,
-        len = this._items.length,
-        plen = Math.ceil(len / this.itemsPerPage);
-
-    if (plen == 0)
-      plen = 1;
-
-    let (classes = [c.Pager1, c.Pager10, c.Pager100, c.Pager1000]) {
-      for each (let [, cp] in Iterator(classes))
-        this._element.classList.remove(cp);
-      let (order = Math.floor(Math.log(plen) / Math.LN10))
-        this._element.classList.add(classes[order < 3 ? order : 3]);
-    };
-
-    let (ipp = this.itemsPerPage)
-      this._pages = [
-        this._items.slice(ipp*p, ipp*(p+1)) for (p in range(0, plen)) ];
-
+  _createLinks: function() {
     this._links = this._pages.map(
       function(_, p) {
-        var l = HTMLUtil.commandLink(p+1, this.goTo.bind(this, p));
-        l.classList.add(c.PageLink);
+        var l = HTMLUtil.commandLink(p+1, this.goTo.bind(this, p, false));
+        l.classList.add(Pager.ClassNames.PageLink);
+        l.style.display = 'none';
         return l;
       }, this);
 
     this.element.appendChild(
       this._links.joinDOM([this._prevLink, ' '], ' ', [' ', this._nextLink]));
-    this._currentPage = -1;
-    this.goTo(0);
+  },
+  _update: function() {
+    this.element.textContent = '';
+    var plen = Math.ceil(this._items.length / this.itemsPerPage);
+
+    let (c = Pager.ClassNames,
+         order = Math.min(plen.toString().length - 1, 3)) {
+      for each (let [i, cp] in Iterator([c.Pager1, c.Pager10, c.Pager100, c.Pager1000]))
+        HTMLUtil.setClass(this._element, cp, i == order);
+    };
+
+    if (plen == 0)
+      plen = 1;
+    let (ipp = this.itemsPerPage)
+      this._pages = [this._items.slice(ipp * p, ipp * (p+1)) for (p in range(0, plen)) ];
+
+    this._createLinks();
   },
   prev: function() { this.goTo(this.currentPage - 1); },
   next: function() { this.goTo(this.currentPage + 1); },
-  goTo: function(page) {
+  goTo: function(page, forthRedraw) {
     var last = this._pages.length - 1;
-    page >>= 0;
-    if (page < 0) {
-      page = 0;
-    } else if (page > last) {
-      page = last;
-    }
+    page = (page >> 0).roundBetween(0, last);
 
-    if (this._currentPage == page)
+    if (!forthRedraw && this._currentPage == page)
       return;
     this._currentPage = page;
 
-    var minIdx = page - Math.floor((this.maxShowPage - 1) / 2);
-    if (minIdx < 0) minIdx = 0;
-    var maxIdx = minIdx + this.maxShowPage - 1;
-    if (maxIdx > last) {
-      minIdx -= (maxIdx - last);
-      maxIdx = last;
-    }
-
-    let (c = Pager.ClassNames) {
+    let ([minIdx, maxIdx] = page.chooseRange(this.maxShowPage, 0, last),
+         c = Pager.ClassNames) {
       HTMLUtil.setClass(this._prevLink, c.Disable, page == 0);
       HTMLUtil.setClass(this._nextLink, c.Disable, page == last);
       this._links.forEach(
@@ -655,6 +640,7 @@ CustomTab.prototype = Object.extend(
           field.textContent = pager.currentPage + '::' + pager.currentItems;
         },
         false);
+      pager.goTo(0, true);
 
       this.element.appendChild(
         [comment,

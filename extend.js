@@ -82,6 +82,37 @@ Object.extend(
     }
   });
 
+Object.extend(
+  Number.prototype,
+  {
+    roundBetween: function(min, max) {
+      if (this < min)
+        return min;
+      if (this > max)
+        return max;
+      return this;
+    },
+    chooseRange: function(len, minBound, maxBound) {
+      if (minBound === undefined)
+        minBound = Number.NEGATIVE_INFINITY;
+      if (maxBound === undefined)
+        maxBound = Number.POSITIVE_INFINITY;
+
+      var min = this - Math.floor((len - 1) / 2);
+      if (min < minBound)
+        min = minBound;
+      var max = min + (len - 1);
+      if (max > maxBound) {
+        min -= (max - maxBound);
+        max = maxBound;
+      }
+      if (min < minBound)
+        min = minBound;
+
+      return [min, max];
+    }
+  });
+
 // XML (E4X)からDOM Nodeへの変換
 default xml namespace = "http://www.w3.org/1999/xhtml";
 (function() {
