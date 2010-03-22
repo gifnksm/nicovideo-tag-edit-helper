@@ -523,25 +523,26 @@ Tag.prototype = {
     this._updateClass();
     return this._deleted;
   },
+  _updateLock: function(value) {
+    if (this._locked === value) return;
+    this._locked = value;
+    this._customTab.lockedTagCount += value ? 1 : -1;
+  },
+  _updateCategory: function(value) {
+    if (this._category === value) return;
+    this._category = value;
+    this._customTab.categoryTagCount += value ? 1 : -1;
+  },
   _confStatus: function() {
     var ct = this._customTab;
-    var self = this;
-    function updLock(value) {
-      if (self._locked === value) return;
-      self._locked = value;
-      if (value) ct.lockedTagCount++;
-      else       ct.lockedTagCount--;
-    }
-    function updCategory(value) {
-      if (self._category === value) return;
-      self._category = value;
-      if (value) ct.categoryTagCount++;
-      else       ct.categoryTagCount--;
-    }
-    updLock(!this._deleted && this._idealLocked
-            && this.canLock && ct.lockedTagCount < MaxLockedTagCount);
-    updCategory(!this._deleted && this._locked && this._idealCategory
-                && this.canCategorize && ct.categoryTagCount < MaxCategoryTagCount);
+    this._updateLock(
+      !this._deleted && this._idealLocked
+        && this.canLock
+        && (this._locked || ct.lockedTagCount < MaxLockedTagCount));
+    this._updateCategory(
+      !this._deleted && this._locked && this._idealCategory
+        && this.canCategorize
+        && (this._category || ct.categoryTagCount < MaxCategoryTagCount));
   },
   _updateClass: function() {
     if (this._element === null)
@@ -648,10 +649,12 @@ var CustomTab = function() {
 };
 CustomTab.prototype = Object.extend(
   new TabItem(), {
-    lockedTagCount: 0,
-    categoryTagCount: 0,
+    lockedTagCount: null,
+    categoryTagCount: null,
     _tagList: null,
     _createContent: function() {
+      this.lockedTagCount = 0;
+      this.categoryTagCount = 0;
       if (this.state == TabItem.State.Loading)
         return;
       this.state = TabItem.State.Loading;
