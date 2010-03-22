@@ -83,3 +83,6 @@ const CategoryTags = {
     "R-18"
   ].join(' ').split(/\s+/)
 };
+const MaxLockedTagCount = 5;
+const MaxCategoryTagCount = 1;
+const MaxCategorizableTagCount = 3;

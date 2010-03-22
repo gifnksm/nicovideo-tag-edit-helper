@@ -49,13 +49,8 @@ var HTMLUtil = {
       text,
       function(e) { value = command.call(this, !value, e); });
   },
-  propertyToggler: function(text, obj, propName) {
-    return this.toggleLink(
-      text,
-      function(value) obj[propName] = value,
-      obj[propName]
-    );
-  },
+  propertyToggler: function(text, obj, propName) this.commandLink(
+    text, function(e) obj[propName] = !obj[propName]),
   serializeForm: function(form) Array.map(
     form.elements,
     function(elem) encodeURI(elem.name) + "=" + encodeURI(elem.value)
@@ -469,14 +464,19 @@ DomainTab.prototype = Object.extend(
     }
   });
 
-var Tag = function(data) {
+var Tag = function(data, customTab) {
   this.name = data.name;
   this.domain = data.domain;
   this.canLock = data.canLock;
   this.canCategorize = data.canCategorize;
-  this._locked = data.locked;
-  this._category = data.category;
+  this._idealLocked   = this._locked   = data.locked;
+  if (this._locked)
+    customTab.lockedTagCount++;
+  this._idealCategory = this._category = data.category;
+  if (this._category)
+    customTab.categoryTagCount++;
   this._deleted = data.deleted;
+  this._customTab = customTab;
 };
 Tag.Classes = {
   Element: cls('tag'),
@@ -492,22 +492,56 @@ Tag.Classes = {
 };
 Tag.prototype = {
   _locked: null,
+  _idealLocked: null,
   get locked() this._locked,
   set locked(value) {
-    this._locked = value;
+    this._idealLocked = Boolean(value);
+    if (this._idealLocked && this._deleted)
+      this._deleted = false;
+    this._confStatus();
     this._updateClass();
+    return this._locked;
   },
   _category: null,
+  _idealCategory : null,
   get category() this._category,
   set category(value) {
-    this._category = value;
+    this._idealCategory = Boolean(value);
+    if (this._idealCategory) {
+      this._deleted = false;
+      this._idealLocked = true;
+    }
+    this._confStatus();
     this._updateClass();
+    return this._category;
   },
   _deleted: null,
   get deleted() this._deleted,
   set deleted(value) {
-    this._deleted = value;
+    this._deleted = Boolean(value);
+    this._confStatus();
     this._updateClass();
+    return this._deleted;
+  },
+  _confStatus: function() {
+    var ct = this._customTab;
+    var self = this;
+    function updLock(value) {
+      if (self._locked === value) return;
+      self._locked = value;
+      if (value) ct.lockedTagCount++;
+      else       ct.lockedTagCount--;
+    }
+    function updCategory(value) {
+      if (self._category === value) return;
+      self._category = value;
+      if (value) ct.categoryTagCount++;
+      else       ct.categoryTagCount--;
+    }
+    updLock(!this._deleted && this._idealLocked
+            && this.canLock && ct.lockedTagCount < MaxLockedTagCount);
+    updCategory(!this._deleted && this._locked && this._idealCategory
+                && this.canCategorize && ct.categoryTagCount < MaxCategoryTagCount);
   },
   _updateClass: function() {
     if (this._element === null)
@@ -572,9 +606,10 @@ Object.memoizePrototype(
     }
   });
 
-var TagList = function() {
+var TagList = function(customTab) {
   this.element = <div class={TagList.Classes.Element}/>.toDOM();
   this.element.appendChild([this.header, this.body].joinDOM());
+  this._customTab = customTab;
 };
 TagList.Classes = {
   Element: cls('tag-list'),
@@ -594,7 +629,7 @@ TagList.prototype = {
   },
   update: function(tagData) {
     this._originalTagData = tagData.slice();
-    this._tags = tagData.map(function(t) new Tag(t));
+    this._tags = tagData.map(function(t) new Tag(t, this._customTab), this);
     this.body.appendChild(this._tags.map(function(t) t.element).joinDOM(' '));
   }
 };
@@ -607,12 +642,14 @@ var CustomTab = function() {
   this.init('カスタム', <div class={cls('custom-form')}/>.toDOM());
   this._tagList = {};
   for each (let [, d] in Iterator(DomainNames)) {
-    this._tagList[d] = new TagList();
+    this._tagList[d] = new TagList(this);
     this._tagList[d].header.appendChild(TagList.createDomainHeader(d));
   }
 };
 CustomTab.prototype = Object.extend(
   new TabItem(), {
+    lockedTagCount: 0,
+    categoryTagCount: 0,
     _tagList: null,
     _createContent: function() {
       if (this.state == TabItem.State.Loading)
