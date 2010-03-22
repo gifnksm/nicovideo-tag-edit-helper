@@ -23,10 +23,7 @@ const console =
 // ユーティリティ関数
 
 function evt(name) 'GM_NicovideoTagEditHelper_' + name;
-function cls() Array.map(
-  arguments,
-  function(n) '_GM_tag_edit_helper_' + n
-).join(' ');
+function cls() Array.map(arguments, function(n) '_GM_tag_edit_helper_' + n).join(' ');
 
 GM_addStyle(
   GM_getResourceText('style').replace(/__(.+?)__/g, function(_, name) cls(name)));
@@ -369,9 +366,17 @@ DomainTab.prototype = Object.extend(
       this.reload('');
     },
     _callbacks: null,
-    reload: function(data, delay, callback)  {
-      if (typeof(callback) === 'function')
+    _pushCallback: function(callback) {
+      if (typeof callback === 'function')
         this._callbacks.push(callback);
+    },
+    _callCallbacks: function(success) {
+      var fun;
+      while ((fun = this._callbacks.shift()) !== undefined)
+        fun(this, success);
+    },
+    reload: function(data, delay, callback)  {
+      this._pushCallback(callback);
       if (this.loading || this.waiting)
         return;
 
@@ -388,11 +393,11 @@ DomainTab.prototype = Object.extend(
         cd.ontick = function(d) {
           if (d > 0) timer.textContent = '['+Math.ceil(d/1000)+']';
         };
-        cd.ontick(delay);
         cd.ontimeout = function() {
           this.label.removeChild(timer);
           this._startLoading(data);
         }.bind(this);
+        cd.ontick(delay);
         cd.start();
       };
     },
@@ -406,13 +411,13 @@ DomainTab.prototype = Object.extend(
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
         },
         data: data,
-        onload: function(response) {
+        onload: function({responseText}) {
           var success;
-          if (response.responseText.indexOf('<!DOCTYPE') == 0) {
+          if (responseText.indexOf('<!DOCTYPE') == 0) {
             this.element.innerHTML = DomainTab.HTMLs.Error;
             success = false;
           } else {
-            this.element.innerHTML = response.responseText;
+            this.element.innerHTML = responseText;
             success = this._parse();
           }
           this.state = success ? TabItem.State.Loaded : TabItem.State.Error;
@@ -424,11 +429,6 @@ DomainTab.prototype = Object.extend(
           this._callCallbacks(false);
         }.bind(this)
       });
-    },
-    _callCallbacks: function(success) {
-      var fun;
-      while ((fun = this._callbacks.shift()) !== undefined)
-        fun(this, success);
     },
     _parse: function() {
       // 子要素が唯一でP要素なら読み込みエラー (混雑中)
@@ -684,17 +684,18 @@ CustomTab.prototype = Object.extend(
          DomainNames.map(function(d) this._tagList[d].element, this),
          pager.element, field
         ].joinDOM());
-      var self = this, isFirst = true;
-      DomainNames.forEach(function(d) {
-                            self.container.get(d).stopLoading = true;
-                          });
+      this._loadTags();
+    },
+    _loadTags: function() {
+      var self = this, isFirst = true, c = this.container;
+      DomainNames.forEach(function(d) c.get(d).stopLoading = true);
       (function(resume) {
          for each(let [, domain] in Iterator(DomainNames)) {
            function update(item) {
              self._tagList[domain].update(
                item.tags.filter(function(t) t.domain === domain));
            }
-           let item = self.container.get(domain);
+           let item = c.get(domain);
            item.stopLoading = false;
            if (item.loaded) {
              update(item);
@@ -724,14 +725,11 @@ var Application = {
     return null;
   },
   _initItem: function() {
-    this.tab = new Tab();
-    for each (let [, d] in Iterator(DomainNames)) {
-      this.tab.add(d, new DomainTab(d));
-    }
+    var tab = this.tab = new Tab();
+    for each (let [, d] in Iterator(DomainNames))
+      tab.add(d, new DomainTab(d));
+    tab.add('custom', new CustomTab());
 
-    this.tab.add('custom', new CustomTab());
-
-    var tab = this.tab;
     tab.selector.addEventListener(
       Tab.SelectedChangedEvent,
       function() {
@@ -769,42 +767,41 @@ var Application = {
 unsafeWindow.startTagEdit = function(url) {
   setTimeout(function() { Application.init(); });
 };
-unsafeWindow.refreshTagEdit = function(form, loadingContainer) {
+
+function getLoadingStatus(domain, cmd) {
+  if (cmd === null)
+    return '';
+  var value = cmd.getValue();
+  if (value in TagEditLoadingStatus[domain])
+    return TagEditLoadingStatus[domain][value];
+  return '';
+}
+
+unsafeWindow.refreshTagEdit = function(form, containerID) {
   var tab = Application.currentDomainTab;
-  var domain = Application.tab.currentItem;
   if (tab === null)
     return false;
 
-  loadingContainer = tab.element.querySelector('#' + loadingContainer);
-  var loadingText = '';
-  var cmd = form.querySelector('input[type="hidden"][name="cmd"]');
-  if (cmd) {
-    cmd = cmd.getValue();
-    if (cmd in TagEditLoadingStatus[domain])
-      loadingText = TagEditLoadingStatus[domain][cmd];
-  }
+  var domain = Application.tab.currentItem;
 
   Array.forEach(
     Application.editForm.getElementsByTagName('form'),
-    function(form) {
-      Array.forEach(form.elements, function(elem) { elem.disabled = true; });
-    });
-
-  var param = Array.map(
-    form.elements,
-    function(elem) encodeURI(elem.name) + "=" + encodeURI(elem.value)
-  ).join('&');
+    HTMLUtil.disableForm);
 
   let (cd = new CountDownTimer(3000, 300)) {
+    // 同一IDをもつ要素が複数あるので，querySelectorで取得する
+    let container = tab.element.querySelector('#' + containerID),
+        status = getLoadingStatus(
+          domain, form.querySelector('input[type="hidden"][name="cmd"]')),
+        message = CountDownMessage[domain];
     cd.ontick = function(d) {
-      loadingContainer.innerHTML = loadingText +
-        CountDownMessage[domain](Math.ceil(d / 1000));
+      container.innerHTML = status + message(Math.ceil(d / 1000));
     };
     cd.ontimeout = function() {
       for each (let [, d] in Iterator(DomainNames))
         Application.tab.get(d).clearCache();
       Application.tab.get('custom').clearCache();
-      tab.reload(param);
+      tab.reload(HTMLUtil.serializeForm(form));
     };
     cd.start();
   };
