@@ -104,6 +104,89 @@ CountDownTimer.prototype = {
   ontick: function() {}
 };
 
+var NicopediaTagExistLoader = new function() {
+  var Tag = function(tagname, callback) {
+    this.name = tagname;
+    this._callbacks = [];
+    this.pushCallback(callback);
+  };
+  Tag.prototype = {
+    name: null,
+    loaded: false,
+    value: null,
+    get value() this._value,
+    set value(val) {
+      this._value = val;
+      this.loaded = true;
+      this._callCallbacks();
+    },
+    _callbacks: null,
+    pushCallback: function(callback) {
+      if (typeof callback === 'function')
+        this._callbacks.push(callback);
+      if (this.loaded)
+        this._callCallbacks();
+    },
+    _callCallbacks: function() {
+      var fun;
+      while ((fun = this._callbacks.shift()) !== undefined)
+        fun(this.value);
+    }
+  };
+  var Loader = {
+    _unloadedTags: [],
+    _cache: {},                 // {name: true or false}
+    preload: function() {
+      Array.forEach(arguments, function(name) this.addHandler(name), this);
+      this.load();
+    },
+    addHandler: function(tagname, callback) {
+      if (tagname in this._cache) {
+        this._cache[tagname].pushCallback(callback);
+        return;
+      }
+      this._cache[tagname] = new Tag(tagname, callback);
+      this._unloadedTags.push(tagname);
+    },
+    _callbackName: 'gm_nicovideo_tag_edit_helper_callback',
+    _getURL: function(tags) {
+      return 'http://api.nicodic.jp/e/' + this._callbackName + '/' +
+        tags.map(encodeURIComponent).join('/');
+    },
+    _parseResponse: function(text) {
+      return text
+        .replace(new RegExp('^' + this._callbackName + '\\(\\[|\\[\\);$', 'g'))
+        .split(',').map(function(v) v === '1');
+    },
+    _update: function(tags, result) {
+      for each(let [i, tag] in Iterator(tags)) {
+        this._cache[tag].value = result[i];
+      }
+      setTimeout(function() { this.load();  }.bind(this), 1000);
+    },
+    load: function() {
+      if (this._unloadedTags.length == 0)
+        return;
+      var tags = this._unloadedTags.splice(0, NicopediaMaxLoadCount);
+      GM_xmlhttpRequest({
+        method: 'GET',
+        url: this._getURL(tags),
+        onload: function({responseText}) {
+          this._update(tags, this._parseResponse(responseText));
+        }.bind(this),
+        onerror: function() {
+          this._update(tags, Array.repeat(null, tags.length));
+        }.bind(this)
+      });
+    }
+  };
+  return Loader;
+};
+
+// NicopediaTagExistLoader.preload('a', 'b', 'c', 'd', 'e//','moge', 'ほげ');
+// NicopediaTagExistLoader.addHandler('c', function(v) { alert(v); });
+
+
 var Pager = function Pager(items) {
   this._element = <div class={Pager.ClassNames.Pager}/>.toDOM();
   this.items = items || [];
