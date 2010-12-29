@@ -6,9 +6,9 @@
 // @include        http://tw.nicovideo.jp/watch/*
 // @include        http://de.nicovideo.jp/watch/*
 // @include        http://es.nicovideo.jp/watch/*
-// @resource       style http://github.com/gifnksm/nicovideo-tag-edit-helper/raw/master/style.css
-// @require        http://github.com/gifnksm/nicovideo-tag-edit-helper/raw/master/config.js
-// @require        http://github.com/gifnksm/nicovideo-tag-edit-helper/raw/master/extend.js
+// @resource       style https://github.com/gifnksm/nicovideo-tag-edit-helper/raw/master/style.css
+// @require        https://github.com/gifnksm/nicovideo-tag-edit-helper/raw/master/config.js
+// @require        https://github.com/gifnksm/nicovideo-tag-edit-helper/raw/master/extend.js
 // ==/UserScript==
 
 const DEBUG = false;
